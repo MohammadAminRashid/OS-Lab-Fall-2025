@@ -24,9 +24,9 @@ main(void)
 
 
 
-        printf(1,"javad sharifi\n");
-        printf(1,"Sadegh Mahdavi\n");
-        printf(1,"Mohammad Amin Rashid\n");
+      printf(1,"Sadegh Mahdavi\n");
+      printf(1,"javad sharifi\n");
+      printf(1,"Mohammad Amin Rashid\n");
           
     printf(1, "init: starting sh\n");
     pid = fork();
