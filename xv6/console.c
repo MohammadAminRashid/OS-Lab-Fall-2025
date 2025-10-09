@@ -15,6 +15,17 @@
 #include "proc.h"
 #include "x86.h"
 
+
+
+#include <stdio.h>
+
+
+
+#define KEY_LEFT   0xE4  
+#define KEY_RIGHT  0xE5  
+
+
+
 static void consputc(int);
 
 static int panicked = 0;
@@ -139,8 +150,20 @@ cgaputc(int c)
   outb(CRTPORT, 15);
   pos |= inb(CRTPORT+1);
 
-  if(c == '\n')
-    pos += 80 - pos%80;
+  if(c == '\n'){
+    pos += 80 - pos%80;}
+    else if (c == KEY_RIGHT)
+  {
+    pos++;
+    outb(CRTPORT + 1, pos);
+    return;
+  }
+  else if (c == KEY_LEFT)
+  {
+    --pos;
+    outb(CRTPORT + 1, pos);
+    return;
+  }
   else if(c == BACKSPACE){
     if(pos > 0) --pos;
   } else
@@ -161,7 +184,15 @@ cgaputc(int c)
   outb(CRTPORT+1, pos);
   crt[pos] = ' ' | 0x0700;
 }
-
+#define INPUT_BUF 128
+struct {
+  char buf[INPUT_BUF];
+  uint r;  // Read index
+  uint w;  // Write index
+  uint e;  // Edit index
+  uint cursor;
+  uint end_pos
+} input;
 void
 consputc(int c)
 {
@@ -171,31 +202,70 @@ consputc(int c)
       ;
   }
 
+
   if(c == BACKSPACE){
     uartputc('\b'); uartputc(' '); uartputc('\b');
-  } else
-    uartputc(c);
+  } 
+  else if (c==KEY_LEFT){
+       uartputc('\b');
+      
+
+  }
+ else if(c==KEY_RIGHT){
+
+
+   uartputc('\033'); 
+  uartputc('[');
+  uartputc('C');
+ 
+
+ }
+  else
+  uartputc(c);
   cgaputc(c);
 }
 
-#define INPUT_BUF 128
-struct {
-  char buf[INPUT_BUF];
-  uint r;  // Read index
-  uint w;  // Write index
-  uint e;  // Edit index
-} input;
+
 
 #define C(x)  ((x)-'@')  // Control-x
+
+void move_chars_left(){
+
+for (uint i=input.cursor ; i<input.e ; i++){
+
+
+  input.buf[i%INPUT_BUF]=input.buf[(i+1)%INPUT_BUF];
+  
+}
+
+ return;
+}
+
 
 void
 consoleintr(int (*getc)(void))
 {
   int c, doprocdump = 0;
-
   acquire(&cons.lock);
+  
   while((c = getc()) >= 0){
     switch(c){
+      case KEY_LEFT:
+        if(input.cursor> input.w){
+          consputc(KEY_LEFT);
+          input.cursor--;
+
+        }         
+      break;
+
+      case KEY_RIGHT:
+         if(input.cursor<input.e){
+          consputc(KEY_RIGHT);
+          input.cursor++;
+         }
+          
+        
+      break;
     case C('P'):  // Process listing.
       // procdump() locks cons.lock indirectly; invoke later
       doprocdump = 1;
@@ -203,22 +273,31 @@ consoleintr(int (*getc)(void))
     case C('U'):  // Kill line.
       while(input.e != input.w &&
             input.buf[(input.e-1) % INPUT_BUF] != '\n'){
+
+            
         input.e--;
+        input.cursor--;
+       
         consputc(BACKSPACE);
       }
       break;
     case C('H'): case '\x7f':  // Backspace
       if(input.e != input.w){
+        move_chars_left();
         input.e--;
+        input.cursor--;
         consputc(BACKSPACE);
+
       }
       break;
     default:
       if(c != 0 && input.e-input.r < INPUT_BUF){
         c = (c == '\r') ? '\n' : c;
         input.buf[input.e++ % INPUT_BUF] = c;
+        input.cursor++;
+      
         consputc(c);
-        if(c == '\n' || c == C('D') || input.e == input.r+INPUT_BUF){
+        if(c == '\n' || c == C('D') || input.e == input.r+INPUT_BUF){  //line complete
           input.w = input.e;
           wakeup(&input.r);
         }
@@ -279,7 +358,7 @@ consolewrite(struct inode *ip, char *buf, int n)
   acquire(&cons.lock);
   for(i = 0; i < n; i++)
     consputc(buf[i] & 0xff);
-  release(&cons.lock);
+  release(&cons.lock); 
   ilock(ip);
 
   return n;

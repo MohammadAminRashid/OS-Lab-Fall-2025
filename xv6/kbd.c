@@ -3,6 +3,8 @@
 #include "defs.h"
 #include "kbd.h"
 
+// #define KEY_LEFT   0xE04B  
+// #define KEY_RIGHT  0xE04D  
 int
 kbdgetc(void)
 {
@@ -19,6 +21,7 @@ kbdgetc(void)
 
   if(data == 0xE0){
     shift |= E0ESC;
+
     return 0;
   } else if(data & 0x80){
     // Key released
@@ -27,8 +30,17 @@ kbdgetc(void)
     return 0;
   } else if(shift & E0ESC){
     // Last character was an E0 escape; or with 0x80
+    // switch(data){
+    //   case 0x4B:  
+    //     shift &= ~E0ESC;
+    //     return KEY_LEFT;
+    //   case 0x4D:  
+    //     shift &= ~E0ESC;
+    //     return KEY_RIGHT;
+    // }
     data |= 0x80;
     shift &= ~E0ESC;
+    
   }
 
   shift |= shiftcode[data];
