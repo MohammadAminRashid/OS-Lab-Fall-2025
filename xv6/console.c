@@ -260,6 +260,14 @@ void shift_crt_left(int pos, int count) {
 
     // crt[pos + count - 1] = ' ' | 0x0700;
 }
+void
+set_cursor(int pos)
+{
+  outb(CRTPORT, 14);
+  outb(CRTPORT+1, pos>>8);
+  outb(CRTPORT, 15);
+  outb(CRTPORT+1, pos);
+}
 int middle=0;
 int x;
 void
@@ -269,6 +277,9 @@ consoleintr(int (*getc)(void))
   acquire(&cons.lock);
   
   while((c = getc()) >= 0){
+    if(input.e > input.end_pos){
+      input.end_pos=input.e;
+    }
     if(input.cursor!=input.e){
       middle=1;
 
@@ -280,12 +291,13 @@ consoleintr(int (*getc)(void))
         if(input.cursor> input.w){
           consputc(KEY_LEFT);
           input.cursor--;
+        }
 
-        }         
+                 
       break;
 
       case KEY_RIGHT:
-         if(input.cursor <(input.e +x)){
+         if(input.cursor <input.end_pos){
           consputc(KEY_RIGHT);
           input.cursor++;
          }
@@ -313,10 +325,45 @@ consoleintr(int (*getc)(void))
         if(middle){
           x++;
         }
-        move_chars_left();
         input.e--;
         input.cursor--;
         consputc(BACKSPACE);
+      }
+      break;
+        case C('A'): 
+      if(input.e != input.w){
+        int flag=0;
+        int found=0;
+        int step=0;
+        while(input.cursor <input.end_pos ){
+             if(flag==1 && input.buf[input.cursor % INPUT_BUF]!=' '){
+
+                 found=1;
+              break;
+             }
+
+             if(input.buf[input.cursor % INPUT_BUF]==' '){
+              flag=1;
+             }
+             input.cursor++;
+             step++;
+            
+        }
+        if(found){
+            int pos;
+            outb(CRTPORT, 14);
+            pos = inb(CRTPORT+1) << 8;
+            outb(CRTPORT, 15);
+            pos |= inb(CRTPORT+1);
+            pos = pos + step;
+            set_cursor(pos);
+            input.e=input.cursor;
+
+        }
+        else{
+               input.cursor=input.e;
+        }
+         
       }
       break;
     default:
@@ -328,7 +375,8 @@ consoleintr(int (*getc)(void))
         consputc(c);
         if(c == '\n' || c == C('D') || input.e == input.r+INPUT_BUF){  //line complete
           input.w = input.e;
-          // x=0;
+          x=0;
+          input.end_pos=0;
           wakeup(&input.r);
         }
       }
