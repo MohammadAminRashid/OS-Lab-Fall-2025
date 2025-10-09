@@ -61,6 +61,22 @@ printint(int xx, int base, int sign)
 }
 //PAGEBREAK: 50
 
+
+
+
+#define INPUT_BUF 128
+struct {
+  char buf[INPUT_BUF];
+  uint r;  // Read index
+  uint w;  // Write index
+  uint e;  // Edit index
+  uint cursor;
+  uint end_pos
+} input;
+
+
+
+
 // Print to the console. only understands %d, %x, %p, %s.
 void
 cprintf(char *fmt, ...)
@@ -165,8 +181,13 @@ cgaputc(int c)
     return;
   }
   else if(c == BACKSPACE){
-    if(pos > 0) --pos;
+    if(pos > 0) {
+    //  memmove(crt + pos - 1, crt + pos, sizeof(crt[0]) * (input.e - input.cursor));
+
+     --pos;
+    }
   } else
+   
     crt[pos++] = (c&0xff) | 0x0700;  // black on white
 
   if(pos < 0 || pos > 25*80)
@@ -184,15 +205,7 @@ cgaputc(int c)
   outb(CRTPORT+1, pos);
   crt[pos] = ' ' | 0x0700;
 }
-#define INPUT_BUF 128
-struct {
-  char buf[INPUT_BUF];
-  uint r;  // Read index
-  uint w;  // Write index
-  uint e;  // Edit index
-  uint cursor;
-  uint end_pos
-} input;
+
 void
 consputc(int c)
 {
@@ -233,7 +246,6 @@ void move_chars_left(){
 
 for (uint i=input.cursor ; i<input.e ; i++){
 
-
   input.buf[i%INPUT_BUF]=input.buf[(i+1)%INPUT_BUF];
   
 }
@@ -241,7 +253,15 @@ for (uint i=input.cursor ; i<input.e ; i++){
  return;
 }
 
+void shift_crt_left(int pos, int count) {
+    // if(count <= 0) return;
 
+    // memmove(crt + pos-1, crt + pos, sizeof(crt[0]+1) * count);
+
+    // crt[pos + count - 1] = ' ' | 0x0700;
+}
+int middle=0;
+int x;
 void
 consoleintr(int (*getc)(void))
 {
@@ -249,6 +269,12 @@ consoleintr(int (*getc)(void))
   acquire(&cons.lock);
   
   while((c = getc()) >= 0){
+    if(input.cursor!=input.e){
+      middle=1;
+
+    }else{
+      middle=0;
+    }
     switch(c){
       case KEY_LEFT:
         if(input.cursor> input.w){
@@ -259,7 +285,7 @@ consoleintr(int (*getc)(void))
       break;
 
       case KEY_RIGHT:
-         if(input.cursor<input.e){
+         if(input.cursor <(input.e +x)){
           consputc(KEY_RIGHT);
           input.cursor++;
          }
@@ -279,15 +305,18 @@ consoleintr(int (*getc)(void))
         input.cursor--;
        
         consputc(BACKSPACE);
+        
       }
       break;
     case C('H'): case '\x7f':  // Backspace
       if(input.e != input.w){
+        if(middle){
+          x++;
+        }
         move_chars_left();
         input.e--;
         input.cursor--;
         consputc(BACKSPACE);
-
       }
       break;
     default:
@@ -299,6 +328,7 @@ consoleintr(int (*getc)(void))
         consputc(c);
         if(c == '\n' || c == C('D') || input.e == input.r+INPUT_BUF){  //line complete
           input.w = input.e;
+          // x=0;
           wakeup(&input.r);
         }
       }
