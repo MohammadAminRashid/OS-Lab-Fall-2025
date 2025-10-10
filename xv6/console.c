@@ -70,8 +70,7 @@ struct {
   uint r;  // Read index
   uint w;  // Write index
   uint e;  // Edit index
-  uint cursor;
-  uint end_pos
+  uint end_pos;
 } input;
 
 
@@ -178,12 +177,12 @@ cgaputc(int c)
   {
     --pos;
     outb(CRTPORT + 1, pos);
+  
     return;
   }
   else if(c == BACKSPACE){
     if(pos > 0) {
-    //  memmove(crt + pos - 1, crt + pos, sizeof(crt[0]) * (input.e - input.cursor));
-
+    //  crt[pos] = ' ' | 0x0700;
      --pos;
     }
   } else
@@ -218,9 +217,12 @@ consputc(int c)
 
   if(c == BACKSPACE){
     uartputc('\b'); uartputc(' '); uartputc('\b');
+     cgaputc(c);
   } 
   else if (c==KEY_LEFT){
        uartputc('\b');
+        cgaputc(c);
+       
       
 
   }
@@ -230,35 +232,28 @@ consputc(int c)
    uartputc('\033'); 
   uartputc('[');
   uartputc('C');
- 
+   cgaputc(c);
 
  }
-  else
+  else{
   uartputc(c);
   cgaputc(c);
+  }
 }
 
 
 
 #define C(x)  ((x)-'@')  // Control-x
 
-void move_chars_left(){
 
-for (uint i=input.cursor ; i<input.e ; i++){
 
-  input.buf[i%INPUT_BUF]=input.buf[(i+1)%INPUT_BUF];
-  
-}
+void printbuf() {
+   for(uint i=input.e+1 ; i<input.end_pos ; i++ ){
 
- return;
-}
-
-void shift_crt_left(int pos, int count) {
-    // if(count <= 0) return;
-
-    // memmove(crt + pos-1, crt + pos, sizeof(crt[0]+1) * count);
-
-    // crt[pos + count - 1] = ' ' | 0x0700;
+    consputc(input.buf[i%INPUT_BUF]);
+ 
+   }
+      
 }
 void
 set_cursor(int pos)
@@ -268,6 +263,46 @@ set_cursor(int pos)
   outb(CRTPORT, 15);
   outb(CRTPORT+1, pos);
 }
+void move_cursor(int delta)
+{
+  int pos;
+
+
+  outb(CRTPORT, 14);
+  pos = inb(CRTPORT+1) << 8;
+  outb(CRTPORT, 15);
+  pos |= inb(CRTPORT+1);
+
+
+  pos += delta;
+
+  
+  if(pos < 0) pos = 0;
+  if(pos >= 25*80) pos = 25*80 - 1;
+  outb(CRTPORT, 14);
+  outb(CRTPORT+1, pos >> 8);
+  outb(CRTPORT, 15);
+  outb(CRTPORT+1, pos);
+}
+void move_chars_left(){
+for (uint i=input.e ; i<input.end_pos-1 ; i++){
+
+  input.buf[i % INPUT_BUF]=input.buf[(i+1)%INPUT_BUF];
+  consputc(input.buf[i % INPUT_BUF]);
+  
+  
+}
+uartputc(' ');
+for (uint i=input.e ; i<input.end_pos-1 ; i++){
+  move_cursor(-1);
+  uartputc('\b');
+
+}
+
+
+ return;
+}
+
 int middle=0;
 int x;
 void
@@ -275,31 +310,32 @@ consoleintr(int (*getc)(void))
 {
   int c, doprocdump = 0;
   acquire(&cons.lock);
+  if(input.e > input.end_pos){
+    input.end_pos=input.e;
+  }
   
   while((c = getc()) >= 0){
-    if(input.e > input.end_pos){
-      input.end_pos=input.e;
-    }
-    if(input.cursor!=input.e){
-      middle=1;
+  
+    // if(input.cursor!=input.e){
+    //   middle=1;
 
-    }else{
-      middle=0;
-    }
+    // }else{
+    //   middle=0;
+    // }
     switch(c){
       case KEY_LEFT:
-        if(input.cursor> input.w){
+        if(input.e> input.w){
           consputc(KEY_LEFT);
-          input.cursor--;
+          input.e--;
         }
 
                  
       break;
 
       case KEY_RIGHT:
-         if(input.cursor <input.end_pos){
+         if(input.e <input.end_pos){
           consputc(KEY_RIGHT);
-          input.cursor++;
+          input.e++;
          }
           
         
@@ -314,7 +350,7 @@ consoleintr(int (*getc)(void))
 
             
         input.e--;
-        input.cursor--;
+        input.end_pos--;
        
         consputc(BACKSPACE);
         
@@ -325,58 +361,78 @@ consoleintr(int (*getc)(void))
         if(middle){
           x++;
         }
+        if(input.e != input.end_pos){
+          
         input.e--;
-        input.cursor--;
+        
         consputc(BACKSPACE);
+      
+        move_chars_left();
+        input.end_pos--;
+        
+        
+        }
+        else{
+          input.e--;
+          input.end_pos--;
+           
+           consputc(BACKSPACE);
+
+        }
       }
       break;
         case C('A'): 
-      if(input.e != input.w){
-        int flag=0;
-        int found=0;
-        int step=0;
-        while(input.cursor <input.end_pos ){
-             if(flag==1 && input.buf[input.cursor % INPUT_BUF]!=' '){
+        //  printint(input.buf[input.e % INPUT_BUF],10,0);
+        consputc(input.buf[input.e % INPUT_BUF]);
 
-                 found=1;
-              break;
-             }
+      // if(input.e != input.w){
+      //   int flag=0;
+      //   int found=0;
+      //   int step=0;
+      //   while(input.cursor <input.end_pos ){
+      //        if(flag==1 && input.buf[input.cursor % INPUT_BUF]!=' '){
 
-             if(input.buf[input.cursor % INPUT_BUF]==' '){
-              flag=1;
-             }
-             input.cursor++;
-             step++;
+      //            found=1;
+      //         break;
+      //        }
+
+      //        if(input.buf[input.cursor % INPUT_BUF]==' '){
+      //         flag=1;
+      //        }
+      //        input.cursor++;
+      //        step++;
             
-        }
-        if(found){
-            int pos;
-            outb(CRTPORT, 14);
-            pos = inb(CRTPORT+1) << 8;
-            outb(CRTPORT, 15);
-            pos |= inb(CRTPORT+1);
-            pos = pos + step;
-            set_cursor(pos);
-            input.e=input.cursor;
+      //   }
+      //   if(found){
+      //       int pos;
+      //       outb(CRTPORT, 14);
+      //       pos = inb(CRTPORT+1) << 8;
+      //       outb(CRTPORT, 15);
+      //       pos |= inb(CRTPORT+1);
+      //       pos = pos + step;
+      //       set_cursor(pos);
+      //       input.e=input.cursor;
 
-        }
-        else{
-               input.cursor=input.e;
-        }
+      //   }
+      //   else{
+      //          input.cursor=input.e;
+      //   }
          
-      }
+      // }
       break;
     default:
       if(c != 0 && input.e-input.r < INPUT_BUF){
         c = (c == '\r') ? '\n' : c;
         input.buf[input.e++ % INPUT_BUF] = c;
-        input.cursor++;
+        if(input.e==input.end_pos+1){
+          input.end_pos++;
+        }
       
         consputc(c);
         if(c == '\n' || c == C('D') || input.e == input.r+INPUT_BUF){  //line complete
           input.w = input.e;
           x=0;
-          input.end_pos=0;
+          input.end_pos=input.e;
           wakeup(&input.r);
         }
       }
@@ -453,4 +509,6 @@ consoleinit(void)
 
   ioapicenable(IRQ_KBD, 0);
 }
+
+
 
