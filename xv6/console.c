@@ -26,6 +26,8 @@
 
 
 
+
+
 static void consputc(int);
 
 static int panicked = 0;
@@ -65,6 +67,10 @@ printint(int xx, int base, int sign)
 
 
 #define INPUT_BUF 128
+
+ char copy_buf[INPUT_BUF];
+
+
 struct {
   char buf[INPUT_BUF];
   uint r;  // Read index
@@ -292,6 +298,7 @@ for (uint i=input.e ; i<input.end_pos-1 ; i++){
   
   
 }
+
 uartputc(' ');
 for (uint i=input.e ; i<input.end_pos-1 ; i++){
   move_cursor(-1);
@@ -302,6 +309,108 @@ for (uint i=input.e ; i<input.end_pos-1 ; i++){
 
  return;
 }
+
+
+
+void move_chars_right(){
+
+//   for (uint i=input.end_pos ; i>=input.e  ; i--){
+
+//          move_cursor(1);  
+// }
+// for (uint i=input.end_pos -1; i>=input.e +1 ; i--){
+
+//   input.buf[(i+1) % INPUT_BUF]=input.buf[i%INPUT_BUF];
+//   consputc(input.buf[(i+1) % INPUT_BUF]);
+//   move_cursor(-2); 
+  
+  
+// }
+
+// move_cursor(1);
+
+for (uint i=input.e ; i<=input.end_pos+1 ; i++){
+
+  
+  input.buf[(i) % INPUT_BUF]=copy_buf[(i-1)%INPUT_BUF];
+  consputc(copy_buf[(i-1)%INPUT_BUF]);
+  
+  
+}
+
+for (uint i=input.e ; i<=input.end_pos+1 ; i++){
+
+    move_cursor(-1);
+  uartputc('\b');
+  
+  
+  
+}
+
+
+ return;
+}
+
+
+
+
+void move_to_first_current(){
+
+        int flag=0;
+        int j=input.e;
+      
+        while(j >   input.w ){
+             if(input.buf[j % INPUT_BUF]==' '){
+                move_cursor(1);
+             input.e+=1;
+              
+                  break;
+             }
+          
+             move_cursor(-1);
+             input.e--;
+             
+             j--;
+          
+        }
+
+
+  return;
+}
+void move_to_first_previous(){
+        int flag=0;
+        int found=0;
+        int step=0;
+        int j=input.e;
+        
+        while(j >  input.w ){
+             if(flag==2 && input.buf[j % INPUT_BUF]==' '){
+                 move_cursor(1);
+             input.e++;
+
+                 found=1;
+              break;
+             }
+             if(flag==1 && input.buf[j % INPUT_BUF]!=' '){
+                flag=2;
+             }
+
+             if(input.buf[j % INPUT_BUF]==' ' && flag==0){
+              flag=1;
+             }
+              move_cursor(-1);
+             input.e--;
+             j--;
+             step++;
+            
+        }
+   
+
+  return;
+}
+
+
+
 
 int middle=0;
 int x;
@@ -381,60 +490,84 @@ consoleintr(int (*getc)(void))
         }
       }
       break;
-        case C('A'): 
-        //  printint(input.buf[input.e % INPUT_BUF],10,0);
-        consputc(input.buf[input.e % INPUT_BUF]);
+        case C('D'): 
+  
+  
+        int flag=0;
+        int found=0;
+        int step=0;
+        int j=input.e;
+        while(j<= input.end_pos ){
+             if(flag==1 && input.buf[j % INPUT_BUF]!=' '){
 
-      // if(input.e != input.w){
-      //   int flag=0;
-      //   int found=0;
-      //   int step=0;
-      //   while(input.cursor <input.end_pos ){
-      //        if(flag==1 && input.buf[input.cursor % INPUT_BUF]!=' '){
+                 found=1;
+              break;
+             }
 
-      //            found=1;
-      //         break;
-      //        }
-
-      //        if(input.buf[input.cursor % INPUT_BUF]==' '){
-      //         flag=1;
-      //        }
-      //        input.cursor++;
-      //        step++;
+             if(input.buf[j % INPUT_BUF]==' '){
+              flag=1;
+             }
+             j++;
+             step++;
             
-      //   }
-      //   if(found){
-      //       int pos;
-      //       outb(CRTPORT, 14);
-      //       pos = inb(CRTPORT+1) << 8;
-      //       outb(CRTPORT, 15);
-      //       pos |= inb(CRTPORT+1);
-      //       pos = pos + step;
-      //       set_cursor(pos);
-      //       input.e=input.cursor;
+        }
+        if(found){
+                for(int i=0 ; i<step ; i++){
+                  move_cursor(1);
+                  input.e++;
+                }
 
-      //   }
-      //   else{
-      //          input.cursor=input.e;
-      //   }
+        }
          
-      // }
+      
+      break;
+      case C('A'): 
+
+
+      if(input.e != input.w){
+    
+        int j=input.e;
+        if(input.buf[j % INPUT_BUF]==' ' || input.buf[(j-1) % INPUT_BUF]==' '){
+              move_to_first_previous();
+        }
+        else{
+
+          move_to_first_current();
+        }
+          
+         
+      }
       break;
     default:
       if(c != 0 && input.e-input.r < INPUT_BUF){
         c = (c == '\r') ? '\n' : c;
-        input.buf[input.e++ % INPUT_BUF] = c;
-        if(input.e==input.end_pos+1){
+
+        if((input.e < input.end_pos) &&  c!='\n'){
+         
+            for(int i=0 ; i<INPUT_BUF ; i++){
+
+              copy_buf[i]=input.buf[i];
+            }
+          input.buf[input.e++ % INPUT_BUF] = c;
+          consputc(c);
+
+          move_chars_right();
           input.end_pos++;
+          break;
         }
-      
-        consputc(c);
+        input.buf[input.e++ % INPUT_BUF] = c;
         if(c == '\n' || c == C('D') || input.e == input.r+INPUT_BUF){  //line complete
           input.w = input.e;
           x=0;
           input.end_pos=input.e;
           wakeup(&input.r);
         }
+        if(input.e==input.end_pos+1){
+          input.end_pos++;
+          consputc(c);
+        }
+  
+      
       }
       break;
     }
