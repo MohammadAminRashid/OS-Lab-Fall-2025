@@ -354,6 +354,61 @@ for (uint i=input.e ; i<=input.end_pos+1 ; i++){
 
 
 
+void move_to_first_current(){
+
+        int flag=0;
+        int j=input.e;
+      
+        while(j >   input.w ){
+             if(input.buf[j % INPUT_BUF]==' '){
+                move_cursor(1);
+             input.e+=1;
+              
+                  break;
+             }
+          
+             move_cursor(-1);
+             input.e--;
+             
+             j--;
+          
+        }
+
+
+  return;
+}
+void move_to_first_previous(){
+        int flag=0;
+        int found=0;
+        int step=0;
+        int j=input.e;
+        
+        while(j >  input.w ){
+             if(flag==2 && input.buf[j % INPUT_BUF]==' '){
+                 move_cursor(1);
+             input.e++;
+
+                 found=1;
+              break;
+             }
+             if(flag==1 && input.buf[j % INPUT_BUF]!=' '){
+                flag=2;
+             }
+
+             if(input.buf[j % INPUT_BUF]==' ' && flag==0){
+              flag=1;
+             }
+              move_cursor(-1);
+             input.e--;
+             j--;
+             step++;
+            
+        }
+   
+
+  return;
+}
+
 
 
 
@@ -435,44 +490,53 @@ consoleintr(int (*getc)(void))
         }
       }
       break;
-        case C('A'): 
-        //  printint(input.buf[input.e % INPUT_BUF],10,0);
-        // consputc(input.buf[input.e % INPUT_BUF]);
+        case C('D'): 
+  
+  
+        int flag=0;
+        int found=0;
+        int step=0;
+        int j=input.e;
+        while(j<= input.end_pos ){
+             if(flag==1 && input.buf[j % INPUT_BUF]!=' '){
 
-      // if(input.e != input.w){
-      //   int flag=0;
-      //   int found=0;
-      //   int step=0;
-      //   while(input.cursor <input.end_pos ){
-      //        if(flag==1 && input.buf[input.cursor % INPUT_BUF]!=' '){
+                 found=1;
+              break;
+             }
 
-      //            found=1;
-      //         break;
-      //        }
-
-      //        if(input.buf[input.cursor % INPUT_BUF]==' '){
-      //         flag=1;
-      //        }
-      //        input.cursor++;
-      //        step++;
+             if(input.buf[j % INPUT_BUF]==' '){
+              flag=1;
+             }
+             j++;
+             step++;
             
-      //   }
-      //   if(found){
-      //       int pos;
-      //       outb(CRTPORT, 14);
-      //       pos = inb(CRTPORT+1) << 8;
-      //       outb(CRTPORT, 15);
-      //       pos |= inb(CRTPORT+1);
-      //       pos = pos + step;
-      //       set_cursor(pos);
-      //       input.e=input.cursor;
+        }
+        if(found){
+                for(int i=0 ; i<step ; i++){
+                  move_cursor(1);
+                  input.e++;
+                }
 
-      //   }
-      //   else{
-      //          input.cursor=input.e;
-      //   }
+        }
          
-      // }
+      
+      break;
+      case C('A'): 
+
+
+      if(input.e != input.w){
+    
+        int j=input.e;
+        if(input.buf[j % INPUT_BUF]==' ' || input.buf[(j-1) % INPUT_BUF]==' '){
+              move_to_first_previous();
+        }
+        else{
+
+          move_to_first_current();
+        }
+          
+         
+      }
       break;
     default:
       if(c != 0 && input.e-input.r < INPUT_BUF){
