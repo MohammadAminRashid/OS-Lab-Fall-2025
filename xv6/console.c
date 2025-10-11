@@ -17,7 +17,6 @@
 
 
 
-#include <stdio.h>
 
 
 
@@ -299,10 +298,10 @@ for (uint i=input.e ; i<input.end_pos-1 ; i++){
   
 }
 
-uartputc(' ');
+// uartputc(' ');
 for (uint i=input.e ; i<input.end_pos-1 ; i++){
   move_cursor(-1);
-  uartputc('\b');
+  // uartputc('\b');
 
 }
 
@@ -314,31 +313,17 @@ for (uint i=input.e ; i<input.end_pos-1 ; i++){
 
 void move_chars_right(){
 
-//   for (uint i=input.end_pos ; i>=input.e  ; i--){
 
-//          move_cursor(1);  
-// }
-// for (uint i=input.end_pos -1; i>=input.e +1 ; i--){
-
-//   input.buf[(i+1) % INPUT_BUF]=input.buf[i%INPUT_BUF];
-//   consputc(input.buf[(i+1) % INPUT_BUF]);
-//   move_cursor(-2); 
-  
-  
-// }
-
-// move_cursor(1);
-
-for (uint i=input.e ; i<=input.end_pos+1 ; i++){
+for (uint i=input.e ; i<=input.end_pos ; i++){
 
   
   input.buf[(i) % INPUT_BUF]=copy_buf[(i-1)%INPUT_BUF];
-  consputc(copy_buf[(i-1)%INPUT_BUF]);
+  consputc(input.buf[(i) % INPUT_BUF]);
   
   
 }
 
-for (uint i=input.e ; i<=input.end_pos+1 ; i++){
+for (uint i=input.e ; i<=input.end_pos; i++){
 
     move_cursor(-1);
   uartputc('\b');
@@ -346,6 +331,7 @@ for (uint i=input.e ; i<=input.end_pos+1 ; i++){
   
   
 }
+   
 
 
  return;
@@ -453,24 +439,30 @@ consoleintr(int (*getc)(void))
       // procdump() locks cons.lock indirectly; invoke later
       doprocdump = 1;
       break;
+
     case C('U'):  // Kill line.
-      while(input.e != input.w &&
-            input.buf[(input.e-1) % INPUT_BUF] != '\n'){
+
+      for(uint i=input.e ; i< input.end_pos ; i++){
+        move_cursor(1);
+      }
+
+      while(input.end_pos != input.w &&
+            input.buf[(input.end_pos-1) % INPUT_BUF] != '\n'){
 
             
-        input.e--;
+        // input.e--;
         input.end_pos--;
+        
        
         consputc(BACKSPACE);
         
       }
+        input.e=input.end_pos;
+ 
       break;
     case C('H'): case '\x7f':  // Backspace
       if(input.e != input.w){
-        if(middle){
-          x++;
-        }
-        if(input.e != input.end_pos){
+        if(input.e <input.end_pos ){
           
         input.e--;
         
@@ -538,16 +530,43 @@ consoleintr(int (*getc)(void))
          
       }
       break;
+
+      case C('Z'): 
+       
+  
+  
+      
+      break;
+
+      case C('S'): 
+       
+  
+  
+      
+      break;
+
+        case C('C'): 
+       
+  
+  
+      
+      break;
+        case C('V'): 
+       
+  
+  
+      
+      break;
     default:
       if(c != 0 && input.e-input.r < INPUT_BUF){
         c = (c == '\r') ? '\n' : c;
 
         if((input.e < input.end_pos) &&  c!='\n'){
-         
-            for(int i=0 ; i<INPUT_BUF ; i++){
-
-              copy_buf[i]=input.buf[i];
-            }
+          
+          for(int i=0 ; i<INPUT_BUF ; i++){
+            
+            copy_buf[i]=input.buf[i];
+          }
           input.buf[input.e++ % INPUT_BUF] = c;
           consputc(c);
 
@@ -561,6 +580,7 @@ consoleintr(int (*getc)(void))
           x=0;
           input.end_pos=input.e;
           wakeup(&input.r);
+          break;
         }
         if(input.e==input.end_pos+1){
           input.end_pos++;
