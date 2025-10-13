@@ -224,7 +224,7 @@ cgaputc(int c)
   outb(CRTPORT + 1, pos >> 8);
   outb(CRTPORT, 15);
   outb(CRTPORT + 1, pos);
-  if (input.color != 'W')
+  if (input.mode!=2)
     crt[pos] = ' ' | 0x0700;
 }
 
@@ -449,7 +449,7 @@ void move_to_first_previous()
   return;
 }
 
-void print_white(uint s1, uint s2)
+void print_select(uint s1, uint s2)
 {
 
   uint min, max;
@@ -491,7 +491,7 @@ void print_white(uint s1, uint s2)
 
 void delete_selected()
 {
-
+     input.mode = 0;
   if (input.s1 <= input.s2)
   {
     move_cursor(1);
@@ -499,10 +499,11 @@ void delete_selected()
   }
   else
   {
+
     uint temp;
-    temp=input.s1;
-    input.s1=input.s2;
-    input.s2=temp;
+    temp = input.s1;
+    input.s1 = input.s2;
+    input.s2 = temp;
     move_cursor(1 + (int)(input.s2 - input.s1));
     for (int i = 0; i <= (int)(input.s2 - input.s1); i++)
     {
@@ -531,10 +532,13 @@ void delete_selected()
       consputc(BACKSPACE);
     }
   }
-  input.mode=0;
+
 
   return;
 }
+
+
+
 void consoleintr(int (*getc)(void))
 {
   int c, doprocdump = 0;
@@ -598,15 +602,17 @@ void consoleintr(int (*getc)(void))
       break;
     case C('H'):
     case '\x7f': // Backspace
+
+      if (input.mode == 2)
+      {
+
+        delete_selected();
+
+        break;
+      }
       if (input.e != input.w)
       {
-        if (input.mode == 2)
-        {
 
-          delete_selected();
-
-          break;
-        }
         if (input.e < input.end_pos)
         {
 
@@ -703,12 +709,17 @@ void consoleintr(int (*getc)(void))
       }
       else if (input.mode == 1)
       {
-
+          input.mode = 2;
         input.s2 = input.e;
         input.color = 'W';
-        print_white(input.s1, input.s2);
+        print_select(input.s1, input.s2);
         input.color = 'B';
-        input.mode = 2;
+       
+      }
+       else if (input.mode == 2)
+      {
+        print_select(input.s1, input.s2);
+        input.mode=0;
       }
 
       break;
@@ -722,6 +733,10 @@ void consoleintr(int (*getc)(void))
     default:
       if (c != 0 && input.e - input.r < INPUT_BUF)
       {
+        if (input.mode == 2)
+        {
+          delete_selected();
+        }
         c = (c == '\r') ? '\n' : c;
 
         if ((input.e < input.end_pos) && c != '\n')
@@ -755,6 +770,7 @@ void consoleintr(int (*getc)(void))
 
           break;
         }
+
         input.buf[input.e++ % INPUT_BUF] = c;
         if (input.e == input.end_pos + 1)
         {
