@@ -75,9 +75,14 @@ struct
   uint e;
   uint end_pos;
   uint time;
+  uint s1; /// alo
+  uint s2;
+  uint mode;
+  char color;
 } input = {
     .time = 0,
-};
+    .mode = 0,
+    .color = 'B'};
 
 // Print to the console. only understands %d, %x, %p, %s.
 void cprintf(char *fmt, ...)
@@ -194,9 +199,16 @@ cgaputc(int c)
       --pos;
     }
   }
+  else if (input.color == 'W')
+  {
+
+    crt[pos++] = (c & 0xff) | 0xF000;
+  }
   else
+  {
 
     crt[pos++] = (c & 0xff) | 0x0700; // black on white
+  }
 
   if (pos < 0 || pos > 25 * 80)
     panic("pos under/overflow");
@@ -212,7 +224,8 @@ cgaputc(int c)
   outb(CRTPORT + 1, pos >> 8);
   outb(CRTPORT, 15);
   outb(CRTPORT + 1, pos);
-  crt[pos] = ' ' | 0x0700;
+  if (input.color != 'W')
+    crt[pos] = ' ' | 0x0700;
 }
 
 void consputc(int c)
@@ -436,8 +449,92 @@ void move_to_first_previous()
   return;
 }
 
-int middle = 0;
-int x;
+void print_white(uint s1, uint s2)
+{
+
+  uint min, max;
+  if (s1 < s2)
+  {
+    min = s1;
+    max = s2;
+  }
+  else
+  {
+    min = s2;
+    max = s1;
+  }
+  int delta = (int)(min - input.e);
+  move_cursor(delta);
+
+  for (uint i = min; i <= max; i++)
+  {
+
+    consputc(input.buf[i % INPUT_BUF]);
+  }
+  // printint(s1,10,0);
+  // move_cursor(5);
+  // printint(s2,10,0);
+
+  if (s1 > s2)
+  {
+    for (uint i = min; i <= max; i++)
+    {
+
+      move_cursor(-1);
+    }
+  }
+  else
+  {
+    move_cursor(-1);
+  }
+}
+
+void delete_selected()
+{
+
+  if (input.s1 <= input.s2)
+  {
+    move_cursor(1);
+    input.e++;
+  }
+  else
+  {
+    uint temp;
+    temp=input.s1;
+    input.s1=input.s2;
+    input.s2=temp;
+    move_cursor(1 + (int)(input.s2 - input.s1));
+    for (int i = 0; i <= (int)(input.s2 - input.s1); i++)
+    {
+
+      input.e++;
+    }
+  }
+
+  for (int i = 0; i <= (int)(input.s2 - input.s1); i++)
+  {
+    if (input.e < input.end_pos)
+    {
+
+      input.e--;
+
+      consputc(BACKSPACE);
+
+      move_chars_left();
+      input.end_pos--;
+    }
+    else
+    {
+      input.e--;
+      input.end_pos--;
+
+      consputc(BACKSPACE);
+    }
+  }
+  input.mode=0;
+
+  return;
+}
 void consoleintr(int (*getc)(void))
 {
   int c, doprocdump = 0;
@@ -503,6 +600,13 @@ void consoleintr(int (*getc)(void))
     case '\x7f': // Backspace
       if (input.e != input.w)
       {
+        if (input.mode == 2)
+        {
+
+          delete_selected();
+
+          break;
+        }
         if (input.e < input.end_pos)
         {
 
@@ -592,9 +696,20 @@ void consoleintr(int (*getc)(void))
       break;
 
     case C('S'):
+      if (input.mode == 0)
+      {
+        input.s1 = input.e;
+        input.mode = 1;
+      }
+      else if (input.mode == 1)
+      {
 
-      // printint(input.w,10,0);
-      // printint(input.e,10,0);
+        input.s2 = input.e;
+        input.color = 'W';
+        print_white(input.s1, input.s2);
+        input.color = 'B';
+        input.mode = 2;
+      }
 
       break;
 
