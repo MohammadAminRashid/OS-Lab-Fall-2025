@@ -67,6 +67,11 @@ char copy_buf[INPUT_BUF];
 struct char_time times_copy_buf[INPUT_BUF];
 struct char_time times_buf[INPUT_BUF];
 
+char ctrl_c[INPUT_BUF];
+int is_copy = 0;
+uint inedx_copy1 = 0;
+uint inedx_copy2 = 0;
+
 struct
 {
   char buf[INPUT_BUF];
@@ -224,7 +229,7 @@ cgaputc(int c)
   outb(CRTPORT + 1, pos >> 8);
   outb(CRTPORT, 15);
   outb(CRTPORT + 1, pos);
-  if (input.mode!=2)
+  if (input.mode != 2)
     crt[pos] = ' ' | 0x0700;
 }
 
@@ -491,7 +496,7 @@ void print_select(uint s1, uint s2)
 
 void delete_selected()
 {
-     input.mode = 0;
+  input.mode = 0;
   if (input.s1 <= input.s2)
   {
     move_cursor(1);
@@ -533,11 +538,8 @@ void delete_selected()
     }
   }
 
-
   return;
 }
-
-
 
 void consoleintr(int (*getc)(void))
 {
@@ -560,6 +562,13 @@ void consoleintr(int (*getc)(void))
     switch (c)
     {
     case KEY_LEFT:
+
+      if (input.mode == 2)
+      {
+        print_select(input.s1, input.s2);
+        input.mode = 0;
+        break;
+      }
       if (input.e > input.w)
       {
         consputc(KEY_LEFT);
@@ -569,6 +578,12 @@ void consoleintr(int (*getc)(void))
       break;
 
     case KEY_RIGHT:
+      if (input.mode == 2)
+      {
+        print_select(input.s1, input.s2);
+        input.mode = 0;
+        break;
+      }
       if (input.e < input.end_pos)
       {
         consputc(KEY_RIGHT);
@@ -582,6 +597,12 @@ void consoleintr(int (*getc)(void))
       break;
 
     case C('U'): // Kill line.
+      if (input.mode == 2)
+      {
+        print_select(input.s1, input.s2);
+        input.mode = 0;
+        break;
+      }
 
       for (uint i = input.e; i < input.end_pos; i++)
       {
@@ -612,7 +633,6 @@ void consoleintr(int (*getc)(void))
       }
       if (input.e != input.w)
       {
-
         if (input.e < input.end_pos)
         {
 
@@ -633,6 +653,12 @@ void consoleintr(int (*getc)(void))
       }
       break;
     case C('D'):
+      if (input.mode == 2)
+      {
+        print_select(input.s1, input.s2);
+        input.mode = 0;
+        break;
+      }
 
       int flag = 0;
       int found = 0;
@@ -665,6 +691,12 @@ void consoleintr(int (*getc)(void))
 
       break;
     case C('A'):
+      if (input.mode == 2)
+      {
+        print_select(input.s1, input.s2);
+        input.mode = 0;
+        break;
+      }
 
       if (input.e != input.w)
       {
@@ -683,6 +715,12 @@ void consoleintr(int (*getc)(void))
       break;
 
     case C('Z'):
+      if (input.mode == 2)
+      {
+        print_select(input.s1, input.s2);
+        input.mode = 0;
+        break;
+      }
 
       uint removing_char_index = update_time_stack_by_deleting_char();
 
@@ -709,25 +747,82 @@ void consoleintr(int (*getc)(void))
       }
       else if (input.mode == 1)
       {
-          input.mode = 2;
+        input.mode = 2;
         input.s2 = input.e;
         input.color = 'W';
         print_select(input.s1, input.s2);
         input.color = 'B';
-       
       }
-       else if (input.mode == 2)
+      else if (input.mode == 2)
       {
         print_select(input.s1, input.s2);
-        input.mode=0;
+        input.mode = 0;
       }
 
       break;
 
     case C('C'):
+      if (input.mode == 2)
+      {
+        is_copy = 1;
+        for (int i = 0; i < INPUT_BUF; i++)
+        {
+
+          ctrl_c[i] = input.buf[i];
+        }
+        if (input.s1 <= input.s2)
+        {
+
+          inedx_copy1 = input.s1;
+          inedx_copy2 = input.s2;
+        }
+        else
+        {
+
+          inedx_copy1 = input.s1 % INPUT_BUF;
+          inedx_copy2 = input.s2 % INPUT_BUF;
+        }
+      }
 
       break;
     case C('V'):
+
+      if (is_copy == 1)
+      {
+        if (input.mode == 2)
+        {
+          delete_selected();
+        }
+
+        for (uint i = inedx_copy1; i <= inedx_copy2; i++)
+        {
+          c = ctrl_c[i];
+          if ((input.e < input.end_pos) && c != '\n')
+          {
+
+            for (int i = 0; i < INPUT_BUF; i++)
+            {
+
+              copy_buf[i] = input.buf[i];
+            }
+            input.buf[input.e++ % INPUT_BUF] = c;
+            consputc(c);
+
+            move_chars_right();
+
+            input.end_pos++;
+            continue;
+            ;
+          }
+
+          input.buf[input.e++ % INPUT_BUF] = c;
+          if (input.e == input.end_pos + 1)
+          {
+            input.end_pos++;
+            consputc(c);
+          }
+        }
+      }
 
       break;
     default:
@@ -755,7 +850,7 @@ void consoleintr(int (*getc)(void))
           input.end_pos++;
           break;
         }
-        if (c == '\n' || c == C('D') || input.e == input.r + INPUT_BUF)
+                if (c == '\n' || c == C('D') || input.e == input.r + INPUT_BUF)
         { // line complete
           // for(uint i=input.e ; i< input.end_pos ; i++){
 
@@ -770,6 +865,7 @@ void consoleintr(int (*getc)(void))
 
           break;
         }
+
 
         input.buf[input.e++ % INPUT_BUF] = c;
         if (input.e == input.end_pos + 1)
