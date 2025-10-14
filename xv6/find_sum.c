@@ -41,7 +41,7 @@ main(int argc, char *argv[])
     }
   }
 
-
+  unlink("result.txt");
   int fd = open("result.txt", O_CREATE | O_WRONLY);
   if(fd < 0){
     printf(1, "\n");
