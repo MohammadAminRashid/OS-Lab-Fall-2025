@@ -1,7 +1,7 @@
 #include "types.h"
 #include "stat.h"
 #include "user.h"
-#include "fcntl.h"  // برای O_CREATE و O_WRONLY
+#include "fcntl.h" 
 
 int
 main(int argc, char *argv[])
