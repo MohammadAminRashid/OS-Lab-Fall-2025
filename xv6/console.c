@@ -17,6 +17,18 @@
 
 #define KEY_LEFT 0xE4
 #define KEY_RIGHT 0xE5
+#define TAB_KEY '\t'
+#define INPUT_BUF 128
+
+
+const char *cmds[] = {
+  "README", "find_sum", "cat", "echo", "forktest", "grep", "init",
+  "kill", "ln", "ls", "mkdir", "rm", "sh", "stressfs", "usertests",
+  "wc", "zombie", "console", "cd"
+};
+#define CMDS_COUNT (sizeof(cmds)/sizeof(cmds[0]))
+int tab_count = 0;
+
 
 static void consputc(int);
 
@@ -55,7 +67,6 @@ printint(int xx, int base, int sign)
 }
 // PAGEBREAK: 50
 
-#define INPUT_BUF 128
 
 struct char_time
 {
@@ -538,6 +549,29 @@ void clear_char_time_array()
   }
 }
 
+int has_prefix(const char *s, const char *p) {
+  while (*p) {
+    if (*s != *p) return 0;
+    s++; p++;
+  }
+  return 1;
+}
+
+int collect_matches(const char *prefix, int *out_idx, int maxn) {
+  int n = 0;
+  for (int i = 0; i < (int)CMDS_COUNT; i++) {
+    if (has_prefix(cmds[i], prefix)) {
+      if (out_idx && n < maxn) out_idx[n] = i;
+      n++;
+    }
+  }
+  return n;
+}
+
+static void consputs(const char *s) {
+  while (*s) consputc(*s++);
+}
+
 void consoleintr(int (*getc)(void))
 {
   int c, doprocdump = 0;
@@ -547,17 +581,96 @@ void consoleintr(int (*getc)(void))
     input.end_pos = input.e;
   }
 
+
   while ((c = getc()) >= 0)
   {
+    if (c == '\n')
+      tab_count = 0;
 
-    // if(input.cursor!=input.e){
-    //   middle=1;
-
-    // }else{
-    //   middle=0;
-    // }
     switch (c)
     {
+    case TAB_KEY: {
+
+      if (input.e != input.end_pos) {
+        break;
+      }
+
+      char user_input[INPUT_BUF];
+      int len = 0;
+
+      int pos = input.e - 1;
+      if (pos < (int)input.w) {
+        tab_count = 0;
+        break;
+      }
+
+      while (pos >= (int)input.w) {
+        char ch = input.buf[pos % INPUT_BUF];
+        if (ch == ' ' || ch == '\n') 
+          break;
+        pos--;
+      }
+      int start = pos + 1;
+
+
+      for (int i = start; i < (int)input.e && len < INPUT_BUF-1; i++) {
+        user_input[len++] = input.buf[i % INPUT_BUF];
+      }
+      user_input[len] = 0;
+
+      if (len == 0) {
+        tab_count = 0;
+        break;
+      }
+
+      tab_count++;
+
+      int cmd_indexes[64];
+      int m = collect_matches(user_input, cmd_indexes, 64);
+
+      if (m == 0) {
+        tab_count = 0;
+      }
+
+      else if (m == 1) {
+        if (tab_count == 1) {
+          const char *full = cmds[cmd_indexes[0]];
+          const char *suffix = full + len; 
+
+          while (*suffix) {
+            if (input.end_pos - input.r >= INPUT_BUF) 
+              break;
+            input.buf[input.end_pos % INPUT_BUF] = *suffix;
+            input.end_pos++;
+            input.e++;
+            consputc(*suffix);
+            suffix++;
+          }
+        }
+        tab_count = 0;
+
+      } else {
+        if (tab_count == 1) {
+        }
+        else {
+          consputc('\n');
+          for (int k = 0; k < m; k++) {
+            consputs(cmds[cmd_indexes[k]]);
+            consputc(' ');
+          }
+          consputc('\n');
+          tab_count = 0;
+            
+          input.buf[input.end_pos++ % INPUT_BUF] = '\n';
+          input.w = input.end_pos;
+          input.e = input.end_pos;
+          input.r = input.w-1;
+          wakeup(&input.r);
+        }
+      }
+
+      break;
+    }
     case KEY_LEFT:
 
       if (input.mode == 2)
@@ -887,15 +1000,13 @@ void consoleintr(int (*getc)(void))
           input.end_pos++;
           break;
         }
-        // in the default case in consoleintr()
 
         if (c == '\n' || c == C('D') || input.e == input.r + INPUT_BUF)
         {
-          input.buf[input.end_pos++ % INPUT_BUF] = c; // Correctly increments once
+          input.buf[input.end_pos++ % INPUT_BUF] = c; 
           input.w = input.end_pos;
           input.e = input.end_pos;
           wakeup(&input.r);
-          //...
 
           if (c == '\n')
           {
