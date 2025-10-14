@@ -85,7 +85,7 @@ struct
   uint mode;
   char color;
 } input = {
-    .time = 0,
+    .time = 1,
     .mode = 0,
     .color = 'B'};
 
@@ -328,53 +328,6 @@ void move_chars_left()
   return;
 }
 
-void move_timed_chars_right(start_index)
-{
-  for (uint i = start_index; i <= INPUT_BUF; i++)
-    times_buf[(i + 1) % INPUT_BUF] = times_copy_buf[(i) % INPUT_BUF];
-}
-
-void update_time_stack_by_inserting_char(char c)
-{
-  input.time++;
-  struct char_time new_char;
-  new_char.c = c;
-  new_char.time = input.time;
-  uint new_char_index = input.e - input.w - 1;
-  move_timed_chars_right(new_char_index);
-  times_buf[new_char_index] = new_char;
-}
-
-uint find_max_char_time_index()
-{
-  uint max_index;
-  uint max_time = 0;
-  for (uint i = 0; i <= INPUT_BUF; i++)
-  {
-    if (times_buf[i].time > max_time)
-    {
-
-      max_index = i;
-      max_time = times_buf[i].time;
-    }
-  }
-  return max_index;
-}
-
-void move_timed_chars_left(start_index)
-{
-  for (uint i = start_index; i < INPUT_BUF; i++)
-    times_buf[(i) % INPUT_BUF] = times_buf[(i + 1) % INPUT_BUF];
-}
-
-uint update_time_stack_by_deleting_char()
-{
-  uint removing_char_index = find_max_char_time_index();
-  input.time--;
-  move_timed_chars_left(removing_char_index);
-  return removing_char_index;
-}
-
 void move_chars_right()
 {
 
@@ -476,9 +429,7 @@ void print_select(uint s1, uint s2)
 
     consputc(input.buf[i % INPUT_BUF]);
   }
-  // printint(s1,10,0);
-  // move_cursor(5);
-  // printint(s2,10,0);
+
 
   if (s1 > s2)
   {
@@ -526,7 +477,7 @@ void delete_selected()
 
       consputc(BACKSPACE);
 
-      move_chars_left();
+      move_chars_left();  //NOTE
       input.end_pos--;
     }
     else
@@ -539,6 +490,52 @@ void delete_selected()
   }
 
   return;
+}
+
+void move_timed_chars_right(uint start_index)
+{
+  for (uint i = INPUT_BUF - 2; i >= start_index; i--)
+    times_buf[(i + 1) % INPUT_BUF] = times_buf[(i) % INPUT_BUF];
+}
+
+uint find_max_char_time_index()
+{
+  uint max_index;
+  uint max_time = 0;
+  for (uint i = 0; i < INPUT_BUF; i++)
+  {
+    if (times_buf[i].time >= max_time)
+    {
+      max_index = i;
+      max_time = times_buf[i].time;
+    }
+  }
+  return max_index;
+}
+
+void move_timed_chars_left(uint start_index, uint input_buf_start_index)
+{
+  for (uint i = start_index; i < INPUT_BUF - 1; i++)
+    times_buf[(i) % INPUT_BUF] = times_buf[(i + 1) % INPUT_BUF];
+
+  for (uint i = input_buf_start_index; i < input.end_pos - 1; i++)
+  {
+    input.buf[i % INPUT_BUF] = input.buf[(i + 1) % INPUT_BUF];
+    consputc(input.buf[i % INPUT_BUF]);
+  }
+  for (uint i = input_buf_start_index; i < input.end_pos - 1; i++)
+  {
+    move_cursor(-1);
+  }
+}
+
+void clear_char_time_array()
+{
+  for (int i = 0; i < INPUT_BUF; i++)
+  {
+    times_buf[i].time = 0;
+    times_buf[i].c = '\0';
+  }
 }
 
 void consoleintr(int (*getc)(void))
@@ -621,9 +618,9 @@ void consoleintr(int (*getc)(void))
       input.e = input.end_pos;
 
       break;
+
     case C('H'):
     case '\x7f': // Backspace
-
       if (input.mode == 2)
       {
 
@@ -639,13 +636,15 @@ void consoleintr(int (*getc)(void))
           input.e--;
 
           consputc(BACKSPACE);
-
-          move_chars_left();
+          uint cursor_index = input.e - input.w -1 ;
+          move_timed_chars_left(cursor_index, input.e);
           input.end_pos--;
         }
         else
         {
           input.e--;
+          uint cursor_index = input.e - input.w - 1 ;
+          move_timed_chars_left(cursor_index, input.e);
           input.end_pos--;
 
           consputc(BACKSPACE);
@@ -715,28 +714,57 @@ void consoleintr(int (*getc)(void))
       break;
 
     case C('Z'):
+
       if (input.mode == 2)
       {
         print_select(input.s1, input.s2);
         input.mode = 0;
         break;
       }
+      uint removing_char_index = find_max_char_time_index();
+      uint interval = input.end_pos - input.w;
+      uint cursor_index = input.e - input.w - 1;
+      uint absolute_char_index = input.w + removing_char_index;
 
-      uint removing_char_index = update_time_stack_by_deleting_char();
+      if (input.end_pos == input.w)
+      {
+        clear_char_time_array();
+        input.time = 0;
+        break;
+      }
+      else if (cursor_index > removing_char_index)
+      {
+        for (uint i = cursor_index; i > removing_char_index; i--)
+          move_cursor(-1);
 
-      for (uint i = input.e; i > removing_char_index + 1; i--)
+        consputc(BACKSPACE);
+        move_timed_chars_left(removing_char_index, absolute_char_index);
+         
+        for (uint i = cursor_index; i > removing_char_index; i--)
+          move_cursor(1);
+
+        input.e--;
+      }
+      else if (cursor_index < removing_char_index && removing_char_index < interval)
       {
 
-        move_cursor(-1);
-      }
-      consputc(BACKSPACE);
+        for (uint i = cursor_index; i < removing_char_index; i++)
+          move_cursor(1);
 
-      for (uint i = input.e; i > removing_char_index + 1; i--)
+        consputc(BACKSPACE);
+        move_timed_chars_left(removing_char_index, absolute_char_index);
+         
+        for (uint i = cursor_index; i < removing_char_index - 1; i++)
+          move_cursor(-1);
+      }
+      else
       {
-
-        move_cursor(1);
+        consputc(BACKSPACE);
+        move_timed_chars_left(removing_char_index, absolute_char_index);
+         
+        input.e--;
       }
-
+      input.end_pos--;
       break;
 
     case C('S'):
@@ -773,14 +801,14 @@ void consoleintr(int (*getc)(void))
         if (input.s1 <= input.s2)
         {
 
-          inedx_copy1 = input.s1;
-          inedx_copy2 = input.s2;
+          inedx_copy1 = input.s1 % INPUT_BUF;
+          inedx_copy2 = input.s2 % INPUT_BUF;
         }
         else
         {
 
-          inedx_copy1 = input.s1 % INPUT_BUF;
-          inedx_copy2 = input.s2 % INPUT_BUF;
+          inedx_copy1 = input.s2 % INPUT_BUF;
+          inedx_copy2 = input.s1 % INPUT_BUF;
         }
       }
 
@@ -812,7 +840,6 @@ void consoleintr(int (*getc)(void))
 
             input.end_pos++;
             continue;
-            ;
           }
 
           input.buf[input.e++ % INPUT_BUF] = c;
@@ -825,9 +852,11 @@ void consoleintr(int (*getc)(void))
       }
 
       break;
+
     default:
       if (c != 0 && input.e - input.r < INPUT_BUF)
       {
+
         if (input.mode == 2)
         {
           delete_selected();
@@ -844,34 +873,49 @@ void consoleintr(int (*getc)(void))
           }
           input.buf[input.e++ % INPUT_BUF] = c;
           consputc(c);
-
           move_chars_right();
+
+          // right shift needs for times_buf befor inserting new object
+          uint new_char_time_position_index = input.e - input.w - 1;
+          uint last_char_time_position_index = (input.end_pos - 1) - input.w;
+          move_timed_chars_right(new_char_time_position_index);
+          struct char_time new_char;
+          new_char.c = c;
+          new_char.time = input.time++;
+          times_buf[new_char_time_position_index++] = new_char;
 
           input.end_pos++;
           break;
         }
-                if (c == '\n' || c == C('D') || input.e == input.r + INPUT_BUF)
-        { // line complete
-          // for(uint i=input.e ; i< input.end_pos ; i++){
+        // in the default case in consoleintr()
 
-          //         move_cursor(1);
-
-          // }
-          input.buf[input.end_pos++ % INPUT_BUF] = c;
+        if (c == '\n' || c == C('D') || input.e == input.r + INPUT_BUF)
+        {
+          input.buf[input.end_pos++ % INPUT_BUF] = c; // Correctly increments once
           input.w = input.end_pos;
           input.e = input.end_pos;
-
           wakeup(&input.r);
+          //...
+
+          if (c == '\n')
+          {
+            clear_char_time_array();
+            input.time = 0;
+          }
 
           break;
         }
-
-
         input.buf[input.e++ % INPUT_BUF] = c;
         if (input.e == input.end_pos + 1)
         {
           input.end_pos++;
           consputc(c);
+
+          uint last_char_time_position_index = input.e - input.w - 1;
+          struct char_time new_char;
+          new_char.c = c;
+          new_char.time = input.time++;
+          times_buf[last_char_time_position_index] = new_char;
         }
       }
       break;
