@@ -3,8 +3,7 @@
 #include "user.h"
 #include "fcntl.h" 
 
-int
-main(int argc, char *argv[])
+int main(int argc, char *argv[])
 {
   if(argc < 2){
     printf(1, "\n");
@@ -15,14 +14,14 @@ main(int argc, char *argv[])
   int sum = 0;
   int num = 0;
   int in_number = 0;
-  char *p;
+  char *current_char;
   int i;
 
   for(i = 1; i < argc; i++){
-    p = argv[i];
-    while(*p){
-      if(*p >= '0' && *p <= '9'){
-        num = num * 10 + (*p - '0');
+    current_char = argv[i];
+    while(*current_char){
+      if(*current_char >= '0' && *current_char <= '9'){
+        num = num * 10 + (*current_char - '0');
         in_number = 1;
       } else {
         if(in_number){
@@ -31,7 +30,7 @@ main(int argc, char *argv[])
           in_number = 0;
         }
       }
-      p++;
+      current_char++;
     }
 
     if(in_number){
@@ -41,37 +40,35 @@ main(int argc, char *argv[])
     }
   }
 
+  char buf[32];
+  int len = 0;
+  
+  buf[len++] = '\n';
+  
+  if(sum == 0){
+    buf[len++] = '0';
+  } else {
+    char buf_rev[32];
+    int j = 0;
+
+    while(sum > 0){
+      buf_rev[j++] = (sum % 10) + '0';
+      sum /= 10;
+    }
+    
+    while(j > 0)
+    buf[len++] = buf_rev[--j];
+  }
+  
+  buf[len++] = '\n';
+  
   unlink("result.txt");
   int fd = open("result.txt", O_CREATE | O_WRONLY);
   if(fd < 0){
     printf(1, "\n");
-    printf(1, "find_sum: cannot open result.txt\n");
+    printf(1, "cannot open result.txt\n");
     exit();
   }
-
-  char buf[32];
-  int len = 0;
-  int temp = sum;
-
-  buf[len++] = '\n';
-
-  if(temp == 0){
-    buf[len++] = '0';
-  } else {
-    char rev[32];
-    int j = 0;
-
-    while(temp > 0){
-      rev[j++] = (temp % 10) + '0';
-      temp /= 10;
-    }
-
-    while(j > 0)
-      buf[len++] = rev[--j];
-  }
-
-  buf[len++] = '\n';
-
 
   write(fd, buf, len);
   close(fd);
