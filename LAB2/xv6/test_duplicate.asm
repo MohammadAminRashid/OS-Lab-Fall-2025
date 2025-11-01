@@ -1,78 +1,85 @@
 
-_rm:     file format elf32-i386
+_test_duplicate:     file format elf32-i386
 
 
 Disassembly of section .text:
 
 00000000 <main>:
+#include "types.h"
 #include "stat.h"
 #include "user.h"
 
-int
-main(int argc, char *argv[])
+int main(int argc, char *argv[])
 {
    0:	8d 4c 24 04          	lea    0x4(%esp),%ecx
    4:	83 e4 f0             	and    $0xfffffff0,%esp
    7:	ff 71 fc             	push   -0x4(%ecx)
    a:	55                   	push   %ebp
    b:	89 e5                	mov    %esp,%ebp
-   d:	57                   	push   %edi
-   e:	bf 01 00 00 00       	mov    $0x1,%edi
-  13:	56                   	push   %esi
-  14:	53                   	push   %ebx
-  15:	51                   	push   %ecx
-  16:	83 ec 08             	sub    $0x8,%esp
-  19:	8b 59 04             	mov    0x4(%ecx),%ebx
-  1c:	8b 31                	mov    (%ecx),%esi
-  1e:	83 c3 04             	add    $0x4,%ebx
-  int i;
+   d:	51                   	push   %ecx
+   e:	83 ec 04             	sub    $0x4,%esp
 
-  if(argc < 2){
-  21:	83 fe 01             	cmp    $0x1,%esi
-  24:	7f 14                	jg     3a <main+0x3a>
-  26:	eb 3a                	jmp    62 <main+0x62>
-  28:	2e 8d b4 26 00 00 00 	lea    %cs:0x0(%esi,%eiz,1),%esi
-  2f:	00 
-    printf(2, "Usage: rm files...\n");
-    exit();
-  }
-
-  for(i = 1; i < argc; i++){
-  30:	83 c7 01             	add    $0x1,%edi
-  33:	83 c3 04             	add    $0x4,%ebx
-  36:	39 fe                	cmp    %edi,%esi
-  38:	74 23                	je     5d <main+0x5d>
-    if(unlink(argv[i]) < 0){
-  3a:	83 ec 0c             	sub    $0xc,%esp
-  3d:	ff 33                	push   (%ebx)
-  3f:	e8 cf 02 00 00       	call   313 <unlink>
-  44:	83 c4 10             	add    $0x10,%esp
-  47:	85 c0                	test   %eax,%eax
-  49:	79 e5                	jns    30 <main+0x30>
-      printf(2, "rm: %s failed to delete\n", argv[i]);
-  4b:	50                   	push   %eax
-  4c:	ff 33                	push   (%ebx)
-  4e:	68 2c 07 00 00       	push   $0x72c
-  53:	6a 02                	push   $0x2
-  55:	e8 b6 03 00 00       	call   410 <printf>
-      break;
-  5a:	83 c4 10             	add    $0x10,%esp
+    if (argc < 2)
+  11:	83 39 01             	cmpl   $0x1,(%ecx)
+{
+  14:	8b 41 04             	mov    0x4(%ecx),%eax
+    if (argc < 2)
+  17:	7e 28                	jle    41 <main+0x41>
+    {
+        printf(1, "\n");
+        exit();
     }
-  }
+    char *src = argv[1];
+    int ret = make_duplicate(src);
+  19:	83 ec 0c             	sub    $0xc,%esp
+  1c:	ff 70 04             	push   0x4(%eax)
+  1f:	e8 3f 03 00 00       	call   363 <make_duplicate>
+    
+    if (ret == -1)
+  24:	83 c4 10             	add    $0x10,%esp
+  27:	83 f8 ff             	cmp    $0xffffffff,%eax
+  2a:	74 3c                	je     68 <main+0x68>
+    {
+        printf(1,"No file with this name!" );
+    }
+    else if (ret == 0)
+  2c:	85 c0                	test   %eax,%eax
+  2e:	75 25                	jne    55 <main+0x55>
+    {
+        printf(1,"Completed duplicate!" );
+  30:	52                   	push   %edx
+  31:	52                   	push   %edx
+  32:	68 32 07 00 00       	push   $0x732
+  37:	6a 01                	push   $0x1
+  39:	e8 d2 03 00 00       	call   410 <printf>
+  3e:	83 c4 10             	add    $0x10,%esp
+        printf(1, "\n");
+  41:	83 ec 08             	sub    $0x8,%esp
+  44:	68 18 07 00 00       	push   $0x718
+  49:	6a 01                	push   $0x1
+  4b:	e8 c0 03 00 00       	call   410 <printf>
+        exit();
+  50:	e8 6e 02 00 00       	call   2c3 <exit>
+    }
 
-  exit();
-  5d:	e8 61 02 00 00       	call   2c3 <exit>
-    printf(2, "Usage: rm files...\n");
-  62:	52                   	push   %edx
-  63:	52                   	push   %edx
-  64:	68 18 07 00 00       	push   $0x718
-  69:	6a 02                	push   $0x2
-  6b:	e8 a0 03 00 00       	call   410 <printf>
-    exit();
-  70:	e8 4e 02 00 00       	call   2c3 <exit>
-  75:	66 90                	xchg   %ax,%ax
-  77:	66 90                	xchg   %ax,%ax
-  79:	66 90                	xchg   %ax,%ax
+    else
+    {
+        printf(1,"Error");
+  55:	50                   	push   %eax
+  56:	50                   	push   %eax
+  57:	68 47 07 00 00       	push   $0x747
+  5c:	6a 01                	push   $0x1
+  5e:	e8 ad 03 00 00       	call   410 <printf>
+  63:	83 c4 10             	add    $0x10,%esp
+  66:	eb d9                	jmp    41 <main+0x41>
+        printf(1,"No file with this name!" );
+  68:	51                   	push   %ecx
+  69:	51                   	push   %ecx
+  6a:	68 1a 07 00 00       	push   $0x71a
+  6f:	6a 01                	push   $0x1
+  71:	e8 9a 03 00 00       	call   410 <printf>
+  76:	83 c4 10             	add    $0x10,%esp
+  79:	eb c6                	jmp    41 <main+0x41>
   7b:	66 90                	xchg   %ax,%ax
   7d:	66 90                	xchg   %ax,%ax
   7f:	90                   	nop
@@ -649,7 +656,7 @@ printint(int fd, int xx, int base, int sgn)
  3a4:	89 f7                	mov    %esi,%edi
  3a6:	f7 f3                	div    %ebx
  3a8:	8d 76 01             	lea    0x1(%esi),%esi
- 3ab:	0f b6 92 a4 07 00 00 	movzbl 0x7a4(%edx),%edx
+ 3ab:	0f b6 92 ac 07 00 00 	movzbl 0x7ac(%edx),%edx
  3b2:	88 54 35 d7          	mov    %dl,-0x29(%ebp,%esi,1)
   }while((x /= base) != 0);
  3b6:	89 ca                	mov    %ecx,%edx
@@ -770,7 +777,7 @@ printf(int fd, const char *fmt, ...)
  47c:	83 e8 63             	sub    $0x63,%eax
  47f:	83 f8 15             	cmp    $0x15,%eax
  482:	77 1c                	ja     4a0 <printf+0x90>
- 484:	ff 24 85 4c 07 00 00 	jmp    *0x74c(,%eax,4)
+ 484:	ff 24 85 54 07 00 00 	jmp    *0x754(,%eax,4)
  48b:	2e 8d 74 26 00       	lea    %cs:0x0(%esi,%eiz,1),%esi
         putc(fd, c);
       }
@@ -902,7 +909,7 @@ printf(int fd, const char *fmt, ...)
  58b:	e9 31 ff ff ff       	jmp    4c1 <printf+0xb1>
  590:	b8 28 00 00 00       	mov    $0x28,%eax
           s = "(null)";
- 595:	bb 45 07 00 00       	mov    $0x745,%ebx
+ 595:	bb 4d 07 00 00       	mov    $0x74d,%ebx
  59a:	e9 77 ff ff ff       	jmp    516 <printf+0x106>
  59f:	90                   	nop
 
@@ -918,7 +925,7 @@ free(void *ap)
 
   bp = (Header*)ap - 1;
   for(p = freep; !(bp > p && bp < p->s.ptr); p = p->s.ptr)
- 5a1:	a1 50 0a 00 00       	mov    0xa50,%eax
+ 5a1:	a1 48 0a 00 00       	mov    0xa48,%eax
 {
  5a6:	89 e5                	mov    %esp,%ebp
  5a8:	57                   	push   %edi
@@ -964,7 +971,7 @@ free(void *ap)
 }
  5df:	5b                   	pop    %ebx
   freep = p;
- 5e0:	a3 50 0a 00 00       	mov    %eax,0xa50
+ 5e0:	a3 48 0a 00 00       	mov    %eax,0xa48
 }
  5e5:	5e                   	pop    %esi
  5e6:	5f                   	pop    %edi
@@ -995,7 +1002,7 @@ free(void *ap)
     p->s.size += bp->s.size;
  617:	03 53 fc             	add    -0x4(%ebx),%edx
   freep = p;
- 61a:	a3 50 0a 00 00       	mov    %eax,0xa50
+ 61a:	a3 48 0a 00 00       	mov    %eax,0xa48
     p->s.size += bp->s.size;
  61f:	89 50 04             	mov    %edx,0x4(%eax)
     p->s.ptr = bp->s.ptr;
@@ -1028,7 +1035,7 @@ malloc(uint nbytes)
   nunits = (nbytes + sizeof(Header) - 1)/sizeof(Header) + 1;
  639:	8b 45 08             	mov    0x8(%ebp),%eax
   if((prevp = freep) == 0){
- 63c:	8b 15 50 0a 00 00    	mov    0xa50,%edx
+ 63c:	8b 15 48 0a 00 00    	mov    0xa48,%edx
   nunits = (nbytes + sizeof(Header) - 1)/sizeof(Header) + 1;
  642:	8d 78 07             	lea    0x7(%eax),%edi
  645:	c1 ef 03             	shr    $0x3,%edi
@@ -1066,7 +1073,7 @@ malloc(uint nbytes)
     }
     if(p == freep)
  679:	89 c2                	mov    %eax,%edx
- 67b:	3b 05 50 0a 00 00    	cmp    0xa50,%eax
+ 67b:	3b 05 48 0a 00 00    	cmp    0xa48,%eax
  681:	75 ed                	jne    670 <malloc+0x40>
   p = sbrk(nu * sizeof(Header));
  683:	83 ec 0c             	sub    $0xc,%esp
@@ -1084,7 +1091,7 @@ malloc(uint nbytes)
  69d:	50                   	push   %eax
  69e:	e8 fd fe ff ff       	call   5a0 <free>
   return freep;
- 6a3:	8b 15 50 0a 00 00    	mov    0xa50,%edx
+ 6a3:	8b 15 48 0a 00 00    	mov    0xa48,%edx
       if((p = morecore(nunits)) == 0)
  6a9:	83 c4 10             	add    $0x10,%esp
  6ac:	85 d2                	test   %edx,%edx
@@ -1113,7 +1120,7 @@ malloc(uint nbytes)
         p->s.size = nunits;
  6cc:	89 78 04             	mov    %edi,0x4(%eax)
       freep = prevp;
- 6cf:	89 15 50 0a 00 00    	mov    %edx,0xa50
+ 6cf:	89 15 48 0a 00 00    	mov    %edx,0xa48
 }
  6d5:	8d 65 f4             	lea    -0xc(%ebp),%esp
       return (void*)(p + 1);
@@ -1125,15 +1132,15 @@ malloc(uint nbytes)
  6de:	5d                   	pop    %ebp
  6df:	c3                   	ret
     base.s.ptr = freep = prevp = &base;
- 6e0:	c7 05 50 0a 00 00 54 	movl   $0xa54,0xa50
+ 6e0:	c7 05 48 0a 00 00 4c 	movl   $0xa4c,0xa48
  6e7:	0a 00 00 
     base.s.size = 0;
- 6ea:	b8 54 0a 00 00       	mov    $0xa54,%eax
+ 6ea:	b8 4c 0a 00 00       	mov    $0xa4c,%eax
     base.s.ptr = freep = prevp = &base;
- 6ef:	c7 05 54 0a 00 00 54 	movl   $0xa54,0xa54
+ 6ef:	c7 05 4c 0a 00 00 4c 	movl   $0xa4c,0xa4c
  6f6:	0a 00 00 
     base.s.size = 0;
- 6f9:	c7 05 58 0a 00 00 00 	movl   $0x0,0xa58
+ 6f9:	c7 05 50 0a 00 00 00 	movl   $0x0,0xa50
  700:	00 00 00 
     if(p->s.size >= nunits){
  703:	e9 54 ff ff ff       	jmp    65c <malloc+0x2c>

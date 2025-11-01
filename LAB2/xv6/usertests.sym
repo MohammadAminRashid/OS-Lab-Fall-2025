@@ -52,6 +52,7 @@
 000038cb fork
 0000395b sbrk
 0000396b uptime
+00003973 make_duplicate
 00005e20 __bss_start
 00003750 memset
 00000840 createtest

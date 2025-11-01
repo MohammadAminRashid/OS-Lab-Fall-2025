@@ -855,10 +855,11 @@ SYSCALL(uptime)
  60b:	b8 0e 00 00 00       	mov    $0xe,%eax
  610:	cd 40                	int    $0x40
  612:	c3                   	ret
- 613:	66 90                	xchg   %ax,%ax
- 615:	66 90                	xchg   %ax,%ax
- 617:	66 90                	xchg   %ax,%ax
- 619:	66 90                	xchg   %ax,%ax
+
+00000613 <make_duplicate>:
+ 613:	b8 16 00 00 00       	mov    $0x16,%eax
+ 618:	cd 40                	int    $0x40
+ 61a:	c3                   	ret
  61b:	66 90                	xchg   %ax,%ax
  61d:	66 90                	xchg   %ax,%ax
  61f:	90                   	nop

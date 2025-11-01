@@ -24,6 +24,13 @@ char* sbrk(int);
 int sleep(int);
 int uptime(void);
 
+int make_duplicate(const char* src_fil);
+
+
+
+
+
+
 // ulib.c
 int stat(const char*, struct stat*);
 char* strcpy(char*, const char*);

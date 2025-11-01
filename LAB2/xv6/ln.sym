@@ -26,6 +26,7 @@
 0000029b fork
 0000032b sbrk
 0000033b uptime
+00000343 make_duplicate
 00000a20 __bss_start
 00000120 memset
 00000000 main

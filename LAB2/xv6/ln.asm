@@ -573,10 +573,11 @@ SYSCALL(uptime)
  33b:	b8 0e 00 00 00       	mov    $0xe,%eax
  340:	cd 40                	int    $0x40
  342:	c3                   	ret
- 343:	66 90                	xchg   %ax,%ax
- 345:	66 90                	xchg   %ax,%ax
- 347:	66 90                	xchg   %ax,%ax
- 349:	66 90                	xchg   %ax,%ax
+
+00000343 <make_duplicate>:
+ 343:	b8 16 00 00 00       	mov    $0x16,%eax
+ 348:	cd 40                	int    $0x40
+ 34a:	c3                   	ret
  34b:	66 90                	xchg   %ax,%ax
  34d:	66 90                	xchg   %ax,%ax
  34f:	90                   	nop

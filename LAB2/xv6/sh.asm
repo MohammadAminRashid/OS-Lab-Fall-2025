@@ -2126,10 +2126,11 @@ SYSCALL(uptime)
      eab:	b8 0e 00 00 00       	mov    $0xe,%eax
      eb0:	cd 40                	int    $0x40
      eb2:	c3                   	ret
-     eb3:	66 90                	xchg   %ax,%ax
-     eb5:	66 90                	xchg   %ax,%ax
-     eb7:	66 90                	xchg   %ax,%ax
-     eb9:	66 90                	xchg   %ax,%ax
+
+00000eb3 <make_duplicate>:
+     eb3:	b8 16 00 00 00       	mov    $0x16,%eax
+     eb8:	cd 40                	int    $0x40
+     eba:	c3                   	ret
      ebb:	66 90                	xchg   %ax,%ax
      ebd:	66 90                	xchg   %ax,%ax
      ebf:	90                   	nop
