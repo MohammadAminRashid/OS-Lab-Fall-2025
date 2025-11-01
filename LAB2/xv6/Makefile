@@ -169,6 +169,7 @@ UPROGS=\
 	_find_sum\
 	_cat\
 	_test_duplicate\
+	_test_simple\
 	_echo\
 	_forktest\
 	_grep\

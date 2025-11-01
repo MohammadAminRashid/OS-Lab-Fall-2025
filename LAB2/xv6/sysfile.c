@@ -519,7 +519,7 @@ int sys_make_duplicate(void)
     }
    
 
-    int j = 0;
+    j = 0;
     while (j < ip_src->size)
     { 
         n = readi(ip_src, buf,j, sizeof(buf));

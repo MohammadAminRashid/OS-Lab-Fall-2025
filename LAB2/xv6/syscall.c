@@ -103,6 +103,7 @@ extern int sys_unlink(void);
 extern int sys_wait(void);
 extern int sys_write(void);
 extern int sys_uptime(void);
+extern int sys_simple_arithmetic_syscall(void);
 
 extern int sys_make_duplicate(void);
 
@@ -130,6 +131,7 @@ static int (*syscalls[])(void) = {
 [SYS_close]   sys_close,
 
 [SYS_make_duplicate] sys_make_duplicate,
+[SYS_simple_arithmetic_syscall] sys_simple_arithmetic_syscall,
 };
 
 void

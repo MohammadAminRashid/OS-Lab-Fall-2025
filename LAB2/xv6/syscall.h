@@ -21,5 +21,6 @@
 #define SYS_mkdir  20
 #define SYS_close  21
 
-#define SYS_make_duplicate  22
+#define SYS_make_duplicate  23
 
+#define SYS_simple_arithmetic_syscall  22

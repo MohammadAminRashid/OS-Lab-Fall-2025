@@ -89,3 +89,19 @@ sys_uptime(void)
   release(&tickslock);
   return xticks;
 }
+
+int
+sys_simple_arithmetic_syscall(void)
+{
+  int a, b, result;
+  struct proc *curproc = myproc();
+
+  a = curproc->tf->ebx;
+  b = curproc->tf->ecx;
+
+  result = (a - b) * (a + b);
+
+  cprintf("\nsimple_arithmetic_syscall: a = %d, b = %d, result = %d\n", a, b, result);
+
+  return result;
+}

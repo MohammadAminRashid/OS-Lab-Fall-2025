@@ -23,6 +23,7 @@ int getpid(void);
 char* sbrk(int);
 int sleep(int);
 int uptime(void);
+int simple_arithmetic_syscall(int a, int b);
 
 int make_duplicate(const char* src_fil);
 
