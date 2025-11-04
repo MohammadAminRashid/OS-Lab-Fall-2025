@@ -106,6 +106,7 @@ extern int sys_uptime(void);
 extern int sys_simple_arithmetic_syscall(void);
 
 extern int sys_make_duplicate(void);
+extern int sys_show_process_family(void);
 
 static int (*syscalls[])(void) = {
 [SYS_fork]    sys_fork,
@@ -132,6 +133,7 @@ static int (*syscalls[])(void) = {
 
 [SYS_make_duplicate] sys_make_duplicate,
 [SYS_simple_arithmetic_syscall] sys_simple_arithmetic_syscall,
+[SYS_show_process_family] sys_show_process_family
 };
 
 void

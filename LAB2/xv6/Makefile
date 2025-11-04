@@ -170,6 +170,7 @@ UPROGS=\
 	_get_pid\
 	_cat\
 	_test_duplicate\
+	_show_process_family\
 	_test_simple\
 	_echo\
 	_forktest\

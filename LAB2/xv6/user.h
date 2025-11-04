@@ -26,6 +26,7 @@ int uptime(void);
 int simple_arithmetic_syscall(int a, int b);
 
 int make_duplicate(const char* src_fil);
+int show_process_family(int pid);
 
 
 

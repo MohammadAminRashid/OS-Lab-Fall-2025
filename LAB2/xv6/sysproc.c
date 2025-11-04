@@ -105,3 +105,18 @@ sys_simple_arithmetic_syscall(void)
 
   return result;
 }
+
+int sys_show_process_family(void)
+{
+
+int pid;
+if(argint(0,&pid) < 0 ){
+
+
+  return -2;
+}
+
+
+return  show_process_family( pid);
+
+}
