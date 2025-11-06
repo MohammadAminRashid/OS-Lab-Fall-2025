@@ -27,6 +27,7 @@ int simple_arithmetic_syscall(int a, int b);
 
 int make_duplicate(const char* src_fil);
 int show_process_family(int pid);
+int grep_syscall(const char* keyword, const char* filename, char* user_buffer, int buffer_size);
 
 
 

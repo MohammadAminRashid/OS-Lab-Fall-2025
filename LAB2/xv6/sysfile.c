@@ -541,4 +541,135 @@ int sys_make_duplicate(void)
     return 0; 
 }
 
+//////////// sharifi
 
+int find_substr(const char *str, int str_len, const char *substr, int substr_len)
+{
+  if(substr_len <= 0 || str_len < substr_len) 
+    return -1;
+
+  for(int i = 0; i + substr_len <= str_len; i++){
+    int j = 0;
+    while(j < substr_len && str[i + j] == substr[j]) 
+      j++;
+    if(j == substr_len) 
+      return 1;
+  }
+
+  return -1;
+}
+
+int sys_grep_syscall(void)
+{
+  char *keyword = 0;
+  char *filename = 0;  
+  char *user_buffer = 0;             
+  int buffer_size = 0;
+
+  if(argstr(0, &keyword)  < 0) 
+    return -1;
+
+  if(argstr(1, &filename) < 0) 
+    return -1;
+
+  if(argptr(2, &user_buffer, 0) < 0) 
+    return -1;  
+
+  if(argint(3, &buffer_size) < 0) 
+    return -1;
+
+  int klen = 0;
+  while(keyword[klen] != 0){
+    klen++;
+  }
+  if(klen == 0) 
+    return -1;
+
+  int return_value = -1;
+  struct inode *ip = 0;
+
+  begin_op();
+  ip = namei(filename);
+  if(ip == 0){
+    end_op();
+    return -1;
+  }
+
+  ilock(ip);
+
+  int chunk = BSIZE;                
+  char *kernel_buf  = (char*)kalloc();     
+  char *kernel_line = (char*)kalloc();    
+  if(kernel_buf == 0 || kernel_line == 0){
+    if(kernel_buf)  
+      kfree(kernel_buf);
+    if(kernel_line) 
+      kfree(kernel_line);
+    iunlockput(ip);
+    end_op();
+    return -1;
+  }
+
+  int line_len = 0;   
+  int curr_pos = 0;        
+  int read_len;
+
+  while((read_len = readi(ip, kernel_buf, curr_pos, chunk)) > 0){
+    int i = 0;
+    while(i < read_len){
+      char c = kernel_buf[i++];
+
+      if(c != '\n'){
+        kernel_line[line_len++] = c;
+        continue;
+      }
+
+      if(find_substr(kernel_line, line_len, keyword, klen) == 1){
+        int copy_len = line_len;
+        if(copy_len > buffer_size) 
+            copy_len = buffer_size;
+        if(copyout(myproc()->pgdir, (uint)user_buffer, kernel_line, copy_len) < 0){
+          return_value = -1;
+        } else {
+          if(copy_len < buffer_size){
+            char nul = 0;
+            copyout(myproc()->pgdir, (uint)user_buffer + copy_len, &nul, 1);
+          }
+          return_value = copy_len;
+        }
+        goto done;
+      }
+
+      line_len = 0;
+    }
+    curr_pos += read_len;
+  }
+
+  if (line_len > 0) {
+    if (find_substr(kernel_line, line_len, keyword, klen) == 1) {
+      int copy_len = line_len;
+      if (copy_len > buffer_size) 
+        copy_len = buffer_size;
+
+      if (copyout(myproc()->pgdir, (uint)user_buffer, kernel_line, copy_len) < 0) {
+        return_value = -1;
+      } else {
+        if (copy_len < buffer_size) {
+          char nul = 0;
+          copyout(myproc()->pgdir, (uint)user_buffer + copy_len, &nul, 1);
+        }
+        return_value = copy_len;
+      }
+      goto done; 
+    }
+  }
+
+  return_value = -1;
+
+  done:
+    kfree(kernel_buf);
+    kfree(kernel_line);
+    iunlockput(ip);
+    end_op();
+    return return_value;
+}

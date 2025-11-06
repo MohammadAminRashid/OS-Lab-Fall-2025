@@ -1,0 +1,5 @@
+car_arrival 1 2
+car_arrival 1 
+pass_time 14 
+get_stage_status 1
+get_stage_status 2

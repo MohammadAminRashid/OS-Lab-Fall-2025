@@ -1,0 +1,11 @@
+0 Car 1: Arrived -> Stage 1
+0 Car 2: Arrived -> Stage 1
+2 Car 1: Stage 1 -> Stage 2
+In service: 2
+In service: 1
+3 Car 2: Stage 1 -> Done
+In service: 2
+Done
+4 Car 1: Stage 2 -> Done
+Done
+Done

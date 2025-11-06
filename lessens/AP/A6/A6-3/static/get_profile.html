@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Upload Profile</title>
+</head>
+
+<body style="text-align: center;">
+  <section>
+    <h3>Delete your Profile Photo or Upload a new one.</h3>
+    <form action="/get_profile" method="post" enctype="multipart/form-data">
+      <input name="file_name" type="text" placeholder="File Name">
+      <input type="file" name="file">
+      <input type="submit" value="Upload">
+      <input type="submit" value="Delete">
+    </form>
+  </section>
+</body>
+
+</html>

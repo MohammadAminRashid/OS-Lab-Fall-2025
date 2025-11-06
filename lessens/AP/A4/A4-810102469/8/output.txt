@@ -1,0 +1,39 @@
+0 Car 1: Arrived -> Stage 1
+0 Car 2: Arrived -> Stage 1
+In service: 1
+In service: 1
+Working: 2
+Working: 1
+Idle
+Idle
+2 Car 1: Stage 1 -> Stage 2
+3 Car 2: Stage 1 -> Done
+In service: 2
+Done
+Idle
+Idle
+Idle
+Working: 1
+Number of washed cars: 2
+Number of cars in queue: 0
+Number of cars being washed: 0
+Income: 30
+Number of washed cars: 0
+Number of cars in queue: 0
+Number of cars being washed: 1
+Income: 0
+4 Car 1: Stage 2 -> Done
+Done
+Done
+Idle
+Idle
+Idle
+Idle
+Number of washed cars: 2
+Number of cars in queue: 0
+Number of cars being washed: 0
+Income: 30
+Number of washed cars: 1
+Number of cars in queue: 0
+Number of cars being washed: 0
+Income: 18

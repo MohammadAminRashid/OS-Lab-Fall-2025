@@ -1,0 +1,7 @@
+type,payers,borrowers
+equally,Ali:200,Mamad;Sakineh;Taghi;Javad
+equally,Taghi:190;Sakineh:120.33,
+adjustment,Mahdi:1000;Kobra:10;Sakineh:150,Ali:120;Javad:39.7;Nooraldin:83.2
+equally,Javad:124.55,Javad;Mahdi;Ali
+adjustment,Mamad:40,Nooraldin:5;Javad:12
+adjustment,Sakineh:436,Nooraldin:112.67;Javad:121

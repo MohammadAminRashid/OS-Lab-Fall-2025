@@ -26,3 +26,5 @@
 #define SYS_simple_arithmetic_syscall  22
 
 #define SYS_show_process_family 24
+
+#define SYS_grep_syscall 25

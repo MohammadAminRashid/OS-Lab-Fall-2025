@@ -1,0 +1,5 @@
+Ali -> Elahe: 220.01
+Parisa -> Mobina: 133.33
+Ali -> Mahdi: 130
+Amir Ali -> Mahdi: 89.99
+Amir Ali -> Mobina: 43.34

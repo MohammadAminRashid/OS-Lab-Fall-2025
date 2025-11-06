@@ -172,6 +172,7 @@ UPROGS=\
 	_test_duplicate\
 	_show_process_family\
 	_test_simple\
+	_grep_test\
 	_echo\
 	_forktest\
 	_grep\

@@ -1,0 +1,13 @@
+0 Car 1: Arrived -> Stage 1
+0 Car 2: Arrived -> Stage 1
+2 Car 1: Stage 1 -> Stage 2
+3 Car 2: Stage 1 -> Done
+4 Car 1: Stage 2 -> Done
+Number of washed cars: 2
+Number of cars in queue: 0
+Number of cars being washed: 0
+Income: 30
+Number of washed cars: 1
+Number of cars in queue: 0
+Number of cars being washed: 0
+Income: 18

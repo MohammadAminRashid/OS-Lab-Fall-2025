@@ -1,0 +1,5 @@
+0 Car 1: Arrived -> Stage 1
+0 Car 2: Arrived -> Stage 1
+2 Car 1: Stage 1 -> Stage 2
+3 Car 2: Stage 1 -> Done
+4 Car 1: Stage 2 -> Done
