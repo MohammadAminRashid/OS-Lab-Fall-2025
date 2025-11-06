@@ -1,3 +1,0 @@
-car_arrival 1 2
-car_arrival 1 
-pass_time 7
