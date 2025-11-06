@@ -116,7 +116,5 @@ if(argint(0,&pid) < 0 ){
   return -2;
 }
 
-
 return  show_process_family( pid);
-
 }

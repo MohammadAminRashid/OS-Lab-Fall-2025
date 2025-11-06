@@ -545,16 +545,13 @@ void procdump(void)
 
 int show_process_family(int pid)
 {
-
   struct proc *p;
   struct proc *target_p;
   int found = 0;
   int number_of_siblings = 0;
   int number_of_children = 0;
-
   for (p = ptable.proc; p < &ptable.proc[NPROC]; p++)
   {
-
     if (pid == p->pid && p->pid != 0)
     {
       target_p = p;
@@ -565,7 +562,6 @@ int show_process_family(int pid)
 
   if (found == 0)
   {
-
     return -1;
   }
   int parent_id = target_p->parent->pid;
@@ -598,11 +594,7 @@ int show_process_family(int pid)
   }
 
   if (number_of_children > 0)
-  {
-
-    cprintf("Children of process %d:\n", pid);
-    // cprintf("%s", target_p->name);
-
+  { cprintf("Children of process %d:\n", pid);
     for (p = ptable.proc; p < &ptable.proc[NPROC]; p++)
     {
 
@@ -614,23 +606,17 @@ int show_process_family(int pid)
   }
   else
   {
-    cprintf("This process does not have  any children!\n");
+   cprintf("This process does not have  any children!\n");
   }
-
   if (number_of_siblings > 0)
   {
-
     cprintf("Siblings of process %d:\n", pid);
-
     for (p = ptable.proc; p < &ptable.proc[NPROC]; p++)
     {
-
       if (p->pid != 0)
       {
-
         if (parent_id == p->parent->pid)
         {
-
           if (pid != p->pid)
           {
             cprintf("Sibling pid: %d\n", p->pid);
@@ -641,14 +627,8 @@ int show_process_family(int pid)
   }
   else
   {
-
     cprintf("This process does not have  any siblings!\n");
   }
-  //debug
-  
-  // for (p = ptable.proc; p < &ptable.proc[NPROC]; p++){
-  //   cprintf("%d",p->pid);
-  // }
-
+ 
   return 0;
 }

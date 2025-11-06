@@ -471,42 +471,31 @@ int sys_make_duplicate(void)
     struct inode *ip_src;
     struct inode *ip_dest;
     char new_name[128];
-
     int n;
     char buf[512];
-
-
     if (argstr(0, &src_name) < 0)
         return -1;
 
     int i = 0, j = 0;
     while (src_name[i] != '\0')
-    {    
-     
+    {     
         new_name[i] = src_name[i];
         i++;
     }
     while (suffix[j] != '\0')
-    
     {
-      
         new_name[i] = suffix[j];
-        i++;
-        j++;
+        i++;j++;
     }
     new_name[i] = '\0';
-
     begin_op();
-
     ip_src = namei(src_name);
- 
     if (!ip_src)
     {
         end_op();
         return -1; 
     }
     ilock(ip_src);
-
 
     ip_dest = create(new_name, T_FILE, 0, 0);
    

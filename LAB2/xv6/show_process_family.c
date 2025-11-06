@@ -4,7 +4,7 @@
 
 int main(int argc, char *argv[])
 {
-        printf(1, "\n");
+       
     if (argc < 2)
     {
         printf(1, "\n");
@@ -19,6 +19,6 @@ int main(int argc, char *argv[])
     }
 
 
-    printf(1, "\n");
+  
     exit();
 }

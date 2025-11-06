@@ -589,6 +589,21 @@ void consoleintr(int (*getc)(void))
 
     switch (c)
     {
+
+
+
+  case '\r':
+  case '\n':
+  c = '\n';
+  consputc('\n');
+  input.buf[input.end_pos++ % INPUT_BUF] = c;
+  input.w = input.end_pos;
+  input.e = input.end_pos;
+  wakeup(&input.r);
+  clear_char_time_array();
+  input.time = 0;
+  tab_count = 0;
+  break;
     case TAB_KEY: {
 
       if (input.e != input.end_pos) {
