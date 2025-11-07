@@ -90,8 +90,7 @@ sys_uptime(void)
   return xticks;
 }
 
-int
-sys_simple_arithmetic_syscall(void)
+int sys_simple_arithmetic_syscall(void)
 {
   int a, b, result;
   struct proc *curproc = myproc();
@@ -101,7 +100,7 @@ sys_simple_arithmetic_syscall(void)
 
   result = (a - b) * (a + b);
 
-  cprintf("\nsimple_arithmetic_syscall: a = %d, b = %d, result = %d\n", a, b, result);
+  cprintf("Calc:  (%d - %d) * (%d + %d) = %d\n", a, b, a, b, result);
 
   return result;
 }
@@ -117,4 +116,24 @@ if(argint(0,&pid) < 0 ){
 }
 
 return  show_process_family( pid);
+}
+
+extern int set_priority_helper(int pid, int priority);
+
+int sys_set_priority_syscall(void)
+{
+  int pid;
+  int priority;
+
+  if(argint(0, &pid) < 0)
+    return -1;
+  if(argint(1, &priority) < 0)
+    return -1;
+
+  if(priority < 0 || priority > 2) {
+    cprintf("Error: Priority must be between 0 (High) and 2 (Low).\n");
+    return -1;
+  }
+    
+  return set_priority_helper(pid, priority);
 }

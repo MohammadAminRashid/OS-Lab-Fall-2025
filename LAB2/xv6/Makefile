@@ -32,7 +32,7 @@ OBJS = \
 # TOOLPREFIX = i386-jos-elf
 
 # Using native tools (e.g., on X86 Linux)
-#TOOLPREFIX = 
+# TOOLPREFIX = i386-elf-
 
 # Try to infer the correct TOOLPREFIX if not set
 ifndef TOOLPREFIX
@@ -173,6 +173,7 @@ UPROGS=\
 	_test_siblings\
 	_show_process_family\
 	_test_simple\
+	_test_priority\
 	_grep_test\
 	_echo\
 	_forktest\

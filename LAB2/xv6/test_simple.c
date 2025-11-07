@@ -2,8 +2,7 @@
 #include "stat.h"
 #include "user.h"
 
-int
-main(int argc, char *argv[])
+int main(int argc, char *argv[])
 {
   int a, b;
 
@@ -16,8 +15,6 @@ main(int argc, char *argv[])
   b = atoi(argv[2]);
 
   int result = simple_arithmetic_syscall(a, b);
-  
-  printf(1, "User-space: simple_arithmetic_syscall(%d, %d) = %d\n", a, b, result);
-  
+    
   exit();
 }

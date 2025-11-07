@@ -32,11 +32,12 @@ SYSCALL(uptime)
 SYSCALL(make_duplicate)
 SYSCALL(show_process_family)
 SYSCALL(grep_syscall)
+SYSCALL(set_priority_syscall)
 
 .globl simple_arithmetic_syscall
 simple_arithmetic_syscall:
   movl 4(%esp), %ebx  
   movl 8(%esp), %ecx  
-  movl $SYS_simple_arithmetic_syscall, %eax # 
+  movl $SYS_simple_arithmetic_syscall, %eax 
   int $T_SYSCALL    
   ret                

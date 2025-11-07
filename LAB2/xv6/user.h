@@ -23,11 +23,12 @@ int getpid(void);
 char* sbrk(int);
 int sleep(int);
 int uptime(void);
-int simple_arithmetic_syscall(int a, int b);
 
+int simple_arithmetic_syscall(int a, int b);
 int make_duplicate(const char* src_fil);
 int show_process_family(int pid);
 int grep_syscall(const char* keyword, const char* filename, char* user_buffer, int buffer_size);
+int set_priority_syscall(int pid, int priority);
 
 
 
