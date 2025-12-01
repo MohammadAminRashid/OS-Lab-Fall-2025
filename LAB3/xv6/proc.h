@@ -1,3 +1,7 @@
+enum core_type {
+  ECORE = 0,
+  PCORE = 1
+};
 // Per-CPU state
 struct cpu {
   uchar apicid;                // Local APIC ID
@@ -8,6 +12,8 @@ struct cpu {
   int ncli;                    // Depth of pushcli nesting.
   int intena;                  // Were interrupts enabled before pushcli?
   struct proc *proc;           // The process running on this cpu or null
+
+  enum core_type type;         // add for LAB3
 };
 
 extern struct cpu cpus[NCPU];
@@ -50,6 +56,8 @@ struct proc {
   struct inode *cwd;           // Current directory
   char name[16];               // Process name (debugging)
   int priority;
+
+  uint create_time;            // add for FCFS
 };
 
 // Process memory is laid out contiguously, low addresses first:

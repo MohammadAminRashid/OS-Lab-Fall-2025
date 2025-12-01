@@ -7,6 +7,8 @@
 #include "proc.h"
 #include "spinlock.h"
 
+extern uint ticks; // add for FCFS
+
 struct
 {
   struct spinlock lock;
@@ -93,6 +95,8 @@ found:
   p->priority = 1;
 
   release(&ptable.lock);
+
+  p->create_time = ticks; // add for FCFS
 
   // Allocate kernel stack.
   if ((p->kstack = kalloc()) == 0)
@@ -338,6 +342,7 @@ scheduler(void)
   struct cpu *c = mycpu();
   c->proc = 0;
   int found_runnable_at_level_zero; 
+  int cpu_id = cpuid();
 
   for (;;)
   {
@@ -346,6 +351,33 @@ scheduler(void)
 
     // Loop over process table looking for process to run.
     acquire(&ptable.lock);
+
+    // start of FCFS
+    if (cpu_id % 2 == 1) { 
+      struct proc *best = 0;
+      for (p = ptable.proc; p < &ptable.proc[NPROC]; p++) { 
+        if (p->state != RUNNABLE) 
+          continue; 
+        if (best == 0 || p->create_time < best->create_time)
+          best = p; 
+      } 
+
+      if (best) { 
+        c->proc = best; 
+        switchuvm(best); 
+        best->state = RUNNING; 
+        
+        swtch(&(c->scheduler), best->context); 
+
+        switchkvm(); 
+        c->proc = 0; 
+      } 
+
+      release(&ptable.lock);
+      continue; 
+    } 
+    // end of FCFS
+
     found_runnable_at_level_zero = 0;
     for (p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
       if (p->state == RUNNABLE && p->priority == 0) {
@@ -365,7 +397,6 @@ scheduler(void)
         c->proc = 0;
       }
     }
-
 
     if (found_runnable_at_level_zero) {
       release(&ptable.lock);

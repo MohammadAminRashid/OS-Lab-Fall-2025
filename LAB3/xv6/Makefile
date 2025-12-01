@@ -166,6 +166,7 @@ mkfs: mkfs.c fs.h
 .PRECIOUS: %.o
 
 UPROGS=\
+	_FCFS_test\
 	_find_sum\
 	_get_pid\
 	_cat\
