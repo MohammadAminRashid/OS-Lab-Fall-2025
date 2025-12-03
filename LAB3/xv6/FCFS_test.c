@@ -2,8 +2,7 @@
 #include "stat.h"
 #include "user.h"
 
-void busy(char *name, int loops)
-{
+void busy(char *name, int loops) {
   printf(1, "%s: busy start\n", name);
   volatile int x = 0;
   for (int i = 0; i < loops; i++)
@@ -11,10 +10,8 @@ void busy(char *name, int loops)
   printf(1, "%s: busy end\n", name);
 }
 
-int main(void)
-{
+int main(void) {
   int pidA, pidB;
-
   pidA = fork();
   if(pidA < 0){
     exit();
@@ -28,9 +25,7 @@ int main(void)
     printf(1, "A: done\n");
     exit();
   }
-
   sleep(30);
-
   pidB = fork();
   if(pidB < 0){
     exit();
@@ -45,6 +40,5 @@ int main(void)
 
   wait();
   wait();
-
   exit();
 }

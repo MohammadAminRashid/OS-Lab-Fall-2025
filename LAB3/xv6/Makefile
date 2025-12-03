@@ -167,7 +167,7 @@ mkfs: mkfs.c fs.h
 
 UPROGS=\
 	_FCFS_test\
-	_find_sum\
+	_balance_test\
 	_get_pid\
 	_cat\
 	_test_duplicate\

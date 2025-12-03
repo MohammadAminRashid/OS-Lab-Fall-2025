@@ -54,6 +54,11 @@ trap(struct trapframe *tf)
       wakeup(&ticks);
       release(&tickslock);
     }
+
+    if (mycpu()->type == ECORE && ticks % 5 == 0) {    // add for moving between queues
+      balance_queues();
+    }
+
     lapiceoi();
     break;
   case T_IRQ0 + IRQ_IDE:

@@ -145,6 +145,7 @@ void userinit(void)
   p->tf->eflags = FL_IF;
   p->tf->esp = PGSIZE;
   p->tf->eip = 0; // beginning of initcode.S
+  p->host_cpu = 0; // add for moving between queues
 
   safestrcpy(p->name, "initcode", sizeof(p->name));
   p->cwd = namei("/");
@@ -209,6 +210,7 @@ int fork(void)
   np->sz = curproc->sz;
   np->parent = curproc;
   *np->tf = *curproc->tf;
+  np->host_cpu = curproc->host_cpu;   // add for moving between queues
 
   // Clear %eax so that fork returns 0 in the child.
   np->tf->eax = 0;
@@ -335,13 +337,83 @@ int wait(void)
 //   - swtch to start running that process
 //   - eventually that process transfers control
 //       via swtch back to the scheduler.
+
+void
+balance_queues(void)
+{
+  int i;
+  struct proc *p;
+  int runnable_count[NCPU];     
+  int min_P_id = -1;           
+  int min_P_count = 0x7fffffff;
+  int E_id = cpuid();           
+  int E_count = 0;               
+  
+  acquire(&ptable.lock);
+  
+  for(i = 0; i < ncpu; i++) {
+    if(cpus[i].type == PCORE)
+      runnable_count[i] = 0;
+    else
+      runnable_count[i] = -1;
+  }
+  
+  for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+    if(p->state != RUNNABLE)
+      continue;
+
+    if(p->host_cpu == E_id){
+      E_count++;
+    }
+
+    if(cpus[p->host_cpu].type == PCORE){ 
+      runnable_count[p->host_cpu]++;
+    }
+  }
+
+  for(i = 0; i < ncpu; i++){
+    int cnt = runnable_count[i];
+    if(cnt < 0)
+      continue;               
+    if(cnt < min_P_count){
+      min_P_count = cnt;
+      min_P_id = i;
+    }
+  }
+
+  if(E_count < min_P_count + 3){ 
+    release(&ptable.lock);
+    return;
+  }
+
+  struct proc *first = 0;
+  for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+    if(p->state != RUNNABLE)
+      continue;
+    if(p->host_cpu != E_id)
+      continue;                 
+    if(p == initproc)        
+      continue;
+    if(strncmp(p->name, "sh", 2) == 0)
+      continue;
+    if (first == 0 || p->create_time < first->create_time)
+      first = p;
+  }
+
+  if (first) {
+    cprintf("moving process %d from CPU %d to CPU %d\n", first->pid, E_id, min_P_id); 
+    first->host_cpu = min_P_id;
+  }
+
+  release(&ptable.lock);
+}
+
 void
 scheduler(void)
 {
   struct proc *p;
   struct cpu *c = mycpu();
   c->proc = 0;
-  int found_runnable_at_level_zero; 
   int cpu_id = cpuid();
 
   for (;;)
@@ -353,93 +425,60 @@ scheduler(void)
     acquire(&ptable.lock);
 
     // start of FCFS
-    if (cpu_id % 2 == 1) { 
+    if (cpu_id % 2 == 1)
+    {
       struct proc *best = 0;
-      for (p = ptable.proc; p < &ptable.proc[NPROC]; p++) { 
-        if (p->state != RUNNABLE) 
-          continue; 
+      for (p = ptable.proc; p < &ptable.proc[NPROC]; p++)
+      {
+        if (p->state != RUNNABLE)
+          continue;
+        if (p->host_cpu != cpu_id)       // add: only processes of this CPU's queue
+          continue;                     
         if (best == 0 || p->create_time < best->create_time)
-          best = p; 
-      } 
+          best = p;
+      }
 
-      if (best) { 
-        c->proc = best; 
-        switchuvm(best); 
-        best->state = RUNNING; 
-        
-        swtch(&(c->scheduler), best->context); 
+      if (best)
+      {
+        c->proc = best;
 
-        switchkvm(); 
-        c->proc = 0; 
-      } 
+        switchuvm(best);
+        best->state = RUNNING;
+
+        swtch(&(c->scheduler), best->context);
+
+        switchkvm();
+        c->proc = 0;
+      }
 
       release(&ptable.lock);
-      continue; 
-    } 
+      continue;
+    }
     // end of FCFS
 
-    found_runnable_at_level_zero = 0;
-    for (p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
-      if (p->state == RUNNABLE && p->priority == 0) {
-        found_runnable_at_level_zero = 1; 
+    for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+      if(p->state != RUNNABLE || p->host_cpu != cpu_id)  // add: only processes of this CPU's queue
+        continue;                                        
 
-        // Switch to chosen process.  It is the process's job
-        // to release ptable.lock and then reacquire it
-        // before jumping back to us.
-        c->proc = p;
-        switchuvm(p);
-        p->state = RUNNING;
+      // Switch to chosen process.  It is the process's job
+      // to release ptable.lock and then reacquire it
+      // before jumping back to us.
+      c->proc = p;
 
-        swtch(&(c->scheduler), p->context);
-        switchkvm();
+      switchuvm(p);
+      p->state = RUNNING;
 
-        // Process is done running for now.
-        c->proc = 0;
-      }
+      swtch(&(c->scheduler), p->context);
+      switchkvm();
+
+      // Process is done running for now.
+      // It should have changed its p->state before coming back.
+      c->proc = 0;
     }
-
-    if (found_runnable_at_level_zero) {
-      release(&ptable.lock);
-      continue; 
-    }
-
-    int found_runnable_at_level_one = 0; 
-    for (p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
-      if (p->state == RUNNABLE && p->priority == 1) {
-        found_runnable_at_level_one = 1;
-
-        c->proc = p;
-        switchuvm(p);
-        p->state = RUNNING;
-
-        swtch(&(c->scheduler), p->context);
-        switchkvm();
-
-        c->proc = 0;
-      }
-    }
-
-    if (found_runnable_at_level_one) {
-      release(&ptable.lock);
-      continue; 
-    }
-
-    for (p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
-      if (p->state == RUNNABLE && p->priority == 2) {
-        c->proc = p;
-        switchuvm(p);
-        p->state = RUNNING;
-
-        swtch(&(c->scheduler), p->context);
-        switchkvm();
-
-        c->proc = 0;
-      }
-    }
-
     release(&ptable.lock);
   }
 }
+
 // Enter scheduler.  Must hold only ptable.lock
 // and have changed proc->state. Saves and restores
 // intena because intena is a property of this

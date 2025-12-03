@@ -58,6 +58,7 @@ struct proc {
   int priority;
 
   uint create_time;            // add for FCFS
+  int host_cpu;                // add for moving between queues
 };
 
 // Process memory is laid out contiguously, low addresses first:
