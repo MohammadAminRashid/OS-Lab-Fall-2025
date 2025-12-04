@@ -12,7 +12,7 @@ struct cpu {
   int ncli;                    // Depth of pushcli nesting.
   int intena;                  // Were interrupts enabled before pushcli?
   struct proc *proc;           // The process running on this cpu or null
-
+  int last_RR_proc;
   enum core_type type;         // add for LAB3
 };
 
@@ -59,6 +59,7 @@ struct proc {
 
   uint create_time;            // add for FCFS
   int host_cpu;                // add for moving between queues
+  int ticks;
 };
 
 // Process memory is laid out contiguously, low addresses first:

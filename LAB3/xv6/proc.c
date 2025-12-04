@@ -93,6 +93,7 @@ found:
   p->state = EMBRYO;
   p->pid = nextpid++;
   p->priority = 1;
+  p->ticks = 0;
 
   release(&ptable.lock);
 
@@ -328,7 +329,32 @@ int wait(void)
     sleep(curproc, &ptable.lock); // DOC: wait-sleep
   }
 }
+void RR_scheduler(void)
+{
+  struct proc *p;
+  struct cpu *c = mycpu();
+  c->proc = 0;
+  for (int i = 0; i < NPROC; i++)
+  {
+    int idx = (mycpu()->last_RR_proc + 1 + i) % NPROC;
 
+    
+    p = &ptable.proc[idx];
+    if (p->state == RUNNABLE)
+    {
+      c->proc = p;
+      c->last_RR_proc = idx;
+
+      switchuvm(p);
+      p->state = RUNNING;
+      p->ticks = 0;   
+      swtch(&(c->scheduler), p->context);
+      switchkvm();
+      c->proc = 0;
+      return;
+    }
+  }
+}
 // PAGEBREAK: 42
 //  Per-CPU process scheduler.
 //  Each CPU calls scheduler() after setting itself up.
@@ -424,6 +450,14 @@ scheduler(void)
     // Loop over process table looking for process to run.
     acquire(&ptable.lock);
 
+    if (cpu_id % 2 == 0)
+    {
+      
+      RR_scheduler();
+      release(&ptable.lock);
+      continue;
+    }
+
     // start of FCFS
     if (cpu_id % 2 == 1)
     {
@@ -506,7 +540,8 @@ void sched(void)
 
 // Give up the CPU for one scheduling round.
 void yield(void)
-{
+{ 
+  // cprintf(" YIELD      cpu%d pid=%d ticks=%d time=%d\n", cpuid(), myproc()->pid, myproc()->ticks,  myproc()->ticks*10);
   acquire(&ptable.lock); // DOC: yieldlock
   myproc()->state = RUNNABLE;
   sched();
@@ -707,7 +742,8 @@ int show_process_family(int pid)
   }
 
   if (number_of_children > 0)
-  { cprintf("Children of process %d:\n", pid);
+  {
+    cprintf("Children of process %d:\n", pid);
     for (p = ptable.proc; p < &ptable.proc[NPROC]; p++)
     {
 
@@ -719,7 +755,7 @@ int show_process_family(int pid)
   }
   else
   {
-   cprintf("This process does not have  any children!\n");
+    cprintf("This process does not have  any children!\n");
   }
   if (number_of_siblings > 0)
   {
@@ -742,29 +778,29 @@ int show_process_family(int pid)
   {
     cprintf("This process does not have  any siblings!\n");
   }
- 
+
   return 0;
 }
 
-
-int
-set_priority_helper(int pid, int priority)
+int set_priority_helper(int pid, int priority)
 {
   struct proc *p;
   int found = 0;
 
   acquire(&ptable.lock);
-  for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
-    if(p->pid == pid){
-      p->priority = priority; 
+  for (p = ptable.proc; p < &ptable.proc[NPROC]; p++)
+  {
+    if (p->pid == pid)
+    {
+      p->priority = priority;
       found = 1;
       break;
     }
   }
   release(&ptable.lock);
 
-  if(found)
-    return 0; 
+  if (found)
+    return 0;
   else
-    return -1; 
+    return -1;
 }
