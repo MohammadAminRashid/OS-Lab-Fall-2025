@@ -338,7 +338,7 @@ void RR_scheduler(void)
   {
     int idx = (mycpu()->last_RR_proc + 1 + i) % NPROC;
 
-    
+
     p = &ptable.proc[idx];
     if (p->state == RUNNABLE)
     {
@@ -431,7 +431,7 @@ balance_queues(void)
     first->host_cpu = min_P_id;
   }
 
-  release(&ptable.lock);
+  release(&ptable.lock); 
 }
 
 void
