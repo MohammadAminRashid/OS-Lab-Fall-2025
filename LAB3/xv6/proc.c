@@ -146,7 +146,7 @@ void userinit(void)
   p->tf->eflags = FL_IF;
   p->tf->esp = PGSIZE;
   p->tf->eip = 0; // beginning of initcode.S
-  p->host_cpu = 0; // add for moving between queues
+  p->host_cpu = find_least_ecore(); // add for moving between queues
 
   safestrcpy(p->name, "initcode", sizeof(p->name));
   p->cwd = namei("/");
@@ -211,7 +211,7 @@ int fork(void)
   np->sz = curproc->sz;
   np->parent = curproc;
   *np->tf = *curproc->tf;
-  np->host_cpu = curproc->host_cpu;   // add for moving between queues
+  np->host_cpu = find_least_ecore();   // add for moving between queues
 
   // Clear %eax so that fork returns 0 in the child.
   np->tf->eax = 0;
@@ -364,6 +364,50 @@ void RR_scheduler(void)
 //   - eventually that process transfers control
 //       via swtch back to the scheduler.
 
+int find_least_ecore(void) {
+  int i;
+  int count[NCPU];
+  int best = -1;
+  int best_count = 0x7fffffff;
+  struct proc *p;
+
+  for(i = 0; i < ncpu; i++){
+    if(cpus[i].type == ECORE)
+      count[i] = 0;
+    else
+      count[i] = -1;
+  }
+
+  acquire(&ptable.lock);
+
+  for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+    if(!(p->state == RUNNABLE || p->state == RUNNING))
+      continue;
+    if(p->host_cpu < 0 || p->host_cpu >= ncpu)
+      continue;
+    if(cpus[p->host_cpu].type != ECORE)
+      continue;
+
+    count[p->host_cpu]++;
+  }
+
+  for(i = 0; i < ncpu; i++){
+    if(count[i] < 0)
+      continue;
+    if(count[i] < best_count){
+      best_count = count[i];
+      best = i;
+    }
+  }
+
+  release(&ptable.lock);
+
+  if(best < 0)
+    best = 0;
+
+  return best;
+}
+
 void
 balance_queues(void)
 {
@@ -385,14 +429,12 @@ balance_queues(void)
   }
   
   for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
-    if(p->state != RUNNABLE)
-      continue;
-
-    if(p->host_cpu == E_id){
+    if(p->host_cpu == E_id && p->state == RUNNABLE){
       E_count++;
     }
-
-    if(cpus[p->host_cpu].type == PCORE){ 
+    if(p->host_cpu >= 0 && p->host_cpu < ncpu &&
+      cpus[p->host_cpu].type == PCORE &&
+      (p->state == RUNNABLE || p->state == RUNNING)){
       runnable_count[p->host_cpu]++;
     }
   }
@@ -407,7 +449,7 @@ balance_queues(void)
     }
   }
 
-  if(E_count < min_P_count + 3){ 
+  if(min_P_id < 0 || E_count < min_P_count + 3){ 
     release(&ptable.lock);
     return;
   }
@@ -431,7 +473,7 @@ balance_queues(void)
     first->host_cpu = min_P_id;
   }
 
-  release(&ptable.lock); 
+  release(&ptable.lock);
 }
 
 void
