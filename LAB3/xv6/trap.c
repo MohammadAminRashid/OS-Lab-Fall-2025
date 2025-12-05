@@ -61,6 +61,10 @@ void trap(struct trapframe *tf)
       balance_queues();
     }
 
+    // if (myproc() && (tf->cs & 3) == 3) {               // add for evaluate FCFS
+    //   cprintf("tick %d: pid %d\n", ticks, myproc()->pid);  
+    // }
+
     lapiceoi();
     break;
   case T_IRQ0 + IRQ_IDE:

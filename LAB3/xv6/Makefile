@@ -169,8 +169,6 @@ UPROGS=\
 	_FCFS_test\
 	_balance_test\
 	_rrtest\
-	_find_sum\
-	_get_pid\
 	_cat\
 	_test_duplicate\
 	_test_siblings\
