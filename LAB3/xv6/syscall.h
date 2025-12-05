@@ -30,3 +30,7 @@
 #define SYS_grep_syscall 25
 
 #define SYS_set_priority_syscall 26
+
+#define SYS_start_measure  27
+#define SYS_end_measure    28
+#define SYS_print_info     29

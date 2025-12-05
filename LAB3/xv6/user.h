@@ -30,6 +30,10 @@ int show_process_family(int pid);
 int grep_syscall(const char* keyword, const char* filename, char* user_buffer, int buffer_size);
 int set_priority_syscall(int pid, int priority);
 
+int start_measure(void);
+int end_measure(void);
+int print_info(void);
+
 
 
 

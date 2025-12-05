@@ -8,6 +8,9 @@
 #include "spinlock.h"
 
 extern uint ticks; // add for FCFS
+int measurement_start_ticks = 0; // added for start time
+int finished_process_count = 0; 
+int measurement_active = 0; //flag for determining whether we are measuring  
 
 struct
 {
@@ -92,6 +95,7 @@ allocproc(void)
 found:
   p->state = EMBRYO;
   p->pid = nextpid++;
+  p->create_time = ticks;
   p->priority = 1;
   p->ticks = 0;
 
@@ -262,6 +266,10 @@ void exit(void)
   curproc->cwd = 0;
 
   acquire(&ptable.lock);
+
+  if(measurement_active) {
+    finished_process_count++;
+}
 
   // Parent might be sleeping in wait().
   wakeup1(curproc->parent);

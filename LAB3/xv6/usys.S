@@ -34,6 +34,10 @@ SYSCALL(show_process_family)
 SYSCALL(grep_syscall)
 SYSCALL(set_priority_syscall)
 
+SYSCALL(start_measure)
+SYSCALL(end_measure)
+SYSCALL(print_info)
+
 .globl simple_arithmetic_syscall
 simple_arithmetic_syscall:
   movl 4(%esp), %ebx  

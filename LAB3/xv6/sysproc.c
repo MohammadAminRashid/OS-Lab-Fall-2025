@@ -7,6 +7,10 @@
 #include "mmu.h"
 #include "proc.h"
 
+extern int measurement_start_ticks;
+extern int finished_process_count;
+extern int measurement_active;
+
 int
 sys_fork(void)
 {
@@ -136,4 +140,48 @@ int sys_set_priority_syscall(void)
   }
     
   return set_priority_helper(pid, priority);
+}
+
+int sys_start_measure(void) {
+  measurement_active = 1;
+  finished_process_count = 0;
+  measurement_start_ticks = ticks; 
+  cprintf("Measurement Started at tick %d\n", measurement_start_ticks);
+  return 0;
+}
+
+int sys_end_measure(void) {
+  if (!measurement_active) {
+    cprintf("Error: Measurement was not started.\n");
+    return -1;
+  }
+  
+  int current_ticks = ticks;
+  int duration = current_ticks - measurement_start_ticks;
+  
+  if (duration == 0) duration = 1; 
+
+
+  int throughput_integer = finished_process_count / duration;
+  int throughput_fraction = ((finished_process_count * 100) / duration) % 100;
+
+  cprintf("\n--- Measurement Results ---\n");
+  cprintf("Total Time (ticks): %d\n", duration);
+  cprintf("Finished Processes: %d\n", finished_process_count);
+  cprintf("Throughput: %d.%d processes/tick\n", throughput_integer, throughput_fraction);
+  
+  measurement_active = 0;
+  return 0;
+}
+
+int sys_print_info(void) {
+  struct proc *p = myproc(); 
+  int lifetime = ticks - p->create_time;
+  
+  cprintf("\n--- Process Info ---\n");
+  cprintf("Name: %s\n", p->name);
+  cprintf("PID: %d\n", p->pid);
+  cprintf("Lifetime: %d ticks\n", lifetime);
+  
+  return 0;
 }

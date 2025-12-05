@@ -177,6 +177,7 @@ UPROGS=\
 	_show_process_family\
 	_test_simple\
 	_test_priority\
+	_test_sched\
 	_grep_test\
 	_echo\
 	_forktest\
