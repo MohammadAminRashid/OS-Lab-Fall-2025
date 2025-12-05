@@ -168,8 +168,10 @@ int sys_end_measure(void) {
   cprintf("\n--- Measurement Results ---\n");
   cprintf("Total Time (ticks): %d\n", duration);
   cprintf("Finished Processes: %d\n", finished_process_count);
-  cprintf("Throughput: %d.%d processes/tick\n", throughput_integer, throughput_fraction);
-  
+  if(throughput_fraction < 10)
+    cprintf("Throughput: %d.0%d processes/tick\n", throughput_integer, throughput_fraction);
+  else
+    cprintf("Throughput: %d.%d processes/tick\n", throughput_integer, throughput_fraction);
   measurement_active = 0;
   return 0;
 }
