@@ -3,7 +3,7 @@
 #include "user.h"
 
 void heavy_computation() {
-    double x = 0;
+    volatile double x = 0;
     for (double z = 0; z < 4000000.0; z += 1.0) {
          x = x + 3.14 * 89.64; 
     }
@@ -33,7 +33,7 @@ int main(int argc, char *argv[]) {
     for (int i = 0; i < N_CHILDREN; i++) {
         wait();
     }
-    
+    print_info(); 
     end_measure();
     exit();
 }

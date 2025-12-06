@@ -185,5 +185,12 @@ int sys_print_info(void) {
   cprintf("PID: %d\n", p->pid);
   cprintf("Lifetime: %d ticks\n", lifetime);
   
+  int core_id = p->host_cpu; 
+  if (core_id % 2 == 0) {
+     cprintf("Algorithm: Round Robin (E-Core)\n");
+  } else {
+     cprintf("Algorithm: Modified FCFS (P-Core)\n");
+  }
+  
   return 0;
 }
