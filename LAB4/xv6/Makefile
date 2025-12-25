@@ -167,6 +167,7 @@ mkfs: mkfs.c fs.h
 .PRECIOUS: %.o
 
 UPROGS=\
+    _test_sleep\
 	_plock_test\
 	_find_sum\
 	_cat\

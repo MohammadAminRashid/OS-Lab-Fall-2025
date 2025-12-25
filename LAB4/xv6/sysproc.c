@@ -7,7 +7,7 @@
 #include "mmu.h"
 #include "proc.h"
 #include "plock.h"
-
+#include "sleeplock.h"
 int
 sys_fork(void)
 {
@@ -105,4 +105,29 @@ int sys_plock_release(void)
 {
   plock_release(&global_plock);
   return 0;
+}
+
+
+struct sleeplock test_lock;
+int test_lock_init_done = 0;
+
+void ensure_test_lock_init() {
+  if(!test_lock_init_done){
+    initsleeplock(&test_lock, "test_lock");
+    test_lock_init_done = 1;
+  }
+}
+
+int sys_test_lock_acquire(void) {
+  ensure_test_lock_init();
+  acquiresleep(&test_lock);
+  return 0;
+
+}
+
+int sys_test_lock_release(void) {
+  ensure_test_lock_init();
+  releasesleep(&test_lock);
+  return 0;
+
 }

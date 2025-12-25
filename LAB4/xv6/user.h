@@ -25,6 +25,8 @@ int sleep(int);
 int uptime(void);
 int plock_acquire(int);
 int plock_release(void);
+int test_lock_acquire(int);
+int test_lock_release(void);
 
 // ulib.c
 int stat(const char*, struct stat*);

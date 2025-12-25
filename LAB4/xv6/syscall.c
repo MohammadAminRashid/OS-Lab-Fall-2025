@@ -106,6 +106,9 @@ extern int sys_uptime(void);
 extern int sys_plock_acquire(void);
 extern int sys_plock_release(void);
 
+extern int sys_test_lock_acquire(void);
+extern int sys_test_lock_release(void);
+
 static int (*syscalls[])(void) = {
 [SYS_fork]    sys_fork,
 [SYS_exit]    sys_exit,
@@ -130,6 +133,8 @@ static int (*syscalls[])(void) = {
 [SYS_close]   sys_close,
 [SYS_plock_acquire]   sys_plock_acquire,
 [SYS_plock_release]   sys_plock_release,
+[SYS_test_lock_acquire]   sys_test_lock_acquire,
+[SYS_test_lock_release]   sys_test_lock_release,
 };
 
 void
