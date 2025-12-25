@@ -92,7 +92,6 @@ void rwlock_release_read(struct rwlock *rw)
   }
   release(&rw->lk);
 }
-
 void rwlock_acquire_write(struct rwlock *rw)
 {
   acquire(&rw->lk);
@@ -103,7 +102,6 @@ void rwlock_acquire_write(struct rwlock *rw)
   rw->writing=1;
   release(&rw->lk);
 }
-
 void rwlock_release_write(struct rwlock *rw)
 {
   acquire(&rw->lk);

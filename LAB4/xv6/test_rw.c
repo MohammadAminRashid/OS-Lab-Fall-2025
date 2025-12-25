@@ -16,7 +16,6 @@ int main()
         rw_release_write();
         exit();
     }
-
     if (fork()==0)
     {
         sleep(5);  
@@ -28,7 +27,6 @@ int main()
         rw_release_write();
         exit();
     }
-
     for (int i =1; i<4; i++)
     {   
         if (fork()==0)
@@ -38,12 +36,11 @@ int main()
             rw_acquire_read();
             printf(1, "reader %d entered!\n",i);
             sleep(40);
-            printf(1, "reader %d: Leaved\n",i);
+            printf(1, "reader %d Leaved\n",i);
             rw_release_read();
             exit();
         }
     }
-
     if (fork()==0)
     {
         sleep(100);  
