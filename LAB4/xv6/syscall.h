@@ -26,4 +26,7 @@
 
 #define SYS_test_lock_acquire  24
 #define SYS_test_lock_release  25
-
+#define SYS_rw_acquire_read   26
+#define SYS_rw_release_read  27
+#define SYS_rw_acquire_write  28
+#define SYS_rw_release_write 29

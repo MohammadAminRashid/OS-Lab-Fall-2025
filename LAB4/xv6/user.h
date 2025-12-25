@@ -28,6 +28,11 @@ int plock_release(void);
 int test_lock_acquire(int);
 int test_lock_release(void);
 
+int rw_acquire_read(void);
+int rw_release_read(void);
+int rw_acquire_write(void);
+int rw_release_write(void);
+
 // ulib.c
 int stat(const char*, struct stat*);
 char* strcpy(char*, const char*);

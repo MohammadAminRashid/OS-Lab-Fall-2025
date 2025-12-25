@@ -4,7 +4,7 @@ int main() {
     int pid=fork();
     if (pid==0) {
         sleep(10); 
-        printf("Child trying to release parent's lock...\n");
+        printf(1,"Child is trying to release lock of parent !!\n");
         test_lock_release(); 
         exit();
     }

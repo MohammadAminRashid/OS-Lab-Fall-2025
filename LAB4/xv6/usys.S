@@ -33,3 +33,10 @@ SYSCALL(plock_acquire)
 SYSCALL(plock_release)
 SYSCALL(test_lock_acquire)
 SYSCALL(test_lock_release)
+SYSCALL(rw_acquire_read)
+SYSCALL(rw_release_read)
+SYSCALL(rw_acquire_write)
+SYSCALL(rw_release_write)
+
+
+

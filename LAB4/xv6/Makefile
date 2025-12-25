@@ -168,6 +168,7 @@ mkfs: mkfs.c fs.h
 
 UPROGS=\
     _test_sleep\
+	_test_rw\
 	_plock_test\
 	_find_sum\
 	_cat\
