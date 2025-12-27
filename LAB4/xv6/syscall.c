@@ -113,6 +113,7 @@ extern int sys_rw_release_read(void);
 extern int sys_rw_acquire_write(void);
 extern int sys_rw_release_write (void); 
 
+extern int sys_getlockstat(void);
 
 static int (*syscalls[])(void) = {
 [SYS_fork]    sys_fork,
@@ -144,6 +145,7 @@ static int (*syscalls[])(void) = {
 [SYS_rw_release_read]  sys_rw_release_read,
 [SYS_rw_acquire_write]   sys_rw_acquire_write,
 [SYS_rw_release_write] sys_rw_release_write,
+[SYS_getlockstat] sys_getlockstat,
 };
 
 void

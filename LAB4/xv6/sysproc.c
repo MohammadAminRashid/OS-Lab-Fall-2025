@@ -9,7 +9,35 @@
 #include "plock.h"
 #include "sleeplock.h"
 
+extern struct spinlock tickslock;
 
+int
+sys_getlockstat(void)
+{
+  char *score_ptr; 
+  uint scores[NCPU];
+  struct spinlock *lk = &tickslock;
+
+  if(argptr(0, &score_ptr, sizeof(scores)) < 0) {
+    cprintf("DEBUG: argptr FAILED!\n"); 
+    return -1;
+  }
+
+  // cprintf("\n--- KERNEL DEBUG STATS ---\n");
+  for(int i = 0; i < NCPU; i++){
+    // cprintf("CPU %d: Acq = %d, Spins = %d\n", i, (int)lk->acq_count[i], (int)lk->total_spins[i]);
+    if(lk->total_spins[i] > 0) {
+      scores[i] = lk->total_spins[i] / lk->acq_count[i];
+    } else {
+      scores[i] = lk->acq_count[i]; 
+    }
+  }
+
+  if(copyout(myproc()->pgdir, (uint)score_ptr, (void*)&scores, sizeof(scores)) < 0)
+    return -1;
+
+  return 0;
+}
 
 int sys_fork(void)
 {

@@ -32,6 +32,7 @@ int rw_acquire_read(void);
 int rw_release_read(void);
 int rw_acquire_write(void);
 int rw_release_write(void);
+int getlockstat(uint *score);
 
 // ulib.c
 int stat(const char*, struct stat*);
