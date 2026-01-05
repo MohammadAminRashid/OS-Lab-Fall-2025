@@ -10,6 +10,10 @@ struct sleeplock;
 struct stat;
 struct superblock;
 
+
+
+void            invalidate_pages_for_pid(int);
+
 // bio.c
 void            binit(void);
 struct buf*     bread(uint, uint);

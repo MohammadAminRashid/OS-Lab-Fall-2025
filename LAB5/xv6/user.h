@@ -24,6 +24,8 @@ char* sbrk(int);
 int sleep(int);
 int uptime(void);
 
+int write_page(int vpn, int data);
+int read_page(int vpn);
 // ulib.c
 int stat(const char*, struct stat*);
 char* strcpy(char*, const char*);

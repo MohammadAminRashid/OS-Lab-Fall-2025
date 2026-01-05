@@ -166,6 +166,7 @@ mkfs: mkfs.c fs.h
 .PRECIOUS: %.o
 
 UPROGS=\
+    _test_page\
 	_find_sum\
 	_cat\
 	_echo\
