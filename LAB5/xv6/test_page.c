@@ -2,52 +2,35 @@
 #include "stat.h"
 #include "user.h"
 
-int main(void)
+#define PAGES 4
+#define PAGE_SZ 4096
+
+int main()
 {
-    for (int i = 0; i < 4; i++)
+    int i;
+
+    for (i = 0; i < PAGES; i++)
     {
-        write_page(i, i*100);
+        int va = i * PAGE_SZ;
+        printf(1, "WRITE PAGE %d (va=%x) => value=%d\n", i, va, i * 10 + 1);
+        write_page(va, i * 10 + 1);
+    }
+    read_page(2 * PAGE_SZ);
+    read_page(2 * PAGE_SZ);
+    read_page(2 * PAGE_SZ);
+    read_page(2 * PAGE_SZ);
+    read_page(2 * PAGE_SZ);
+    read_page(0 * PAGE_SZ);
+    read_page(1 * PAGE_SZ);
+    write_page(4 * PAGE_SZ, 4 * 10 + 1);
+    // write_page(5 * PAGE_SZ, 4 * 10 + 1);
+    for (i = 0; i < PAGES + 1; i++)
+    {
+        int va = i * PAGE_SZ;
+        int val = read_page(va);
+        printf(1, "READ PAGE %d (va=%x) => got=%d\n", i, va, val);
+        printf("\n %d", i);
     }
 
-    printf(1, "\nReading: %d\n", read_page(0));
-    printf(1, "Reading: %d\n", read_page(1));
-    printf(1, "Reading: %d\n", read_page(2));
-    printf(1, "Reading: %d\n", read_page(3));
-    printf(1, "Reading: %d\n", read_page(4));
-    printf(1, "Reading: %d\n", read_page(5));
-    printf(1, "Reading: %d\n", read_page(0));
-    printf(1, "Reading: %d\n", read_page(1));
-    printf(1, "Reading: %d\n", read_page(2));
-
-
-
-    for (int i = 0; i < 4; i++)
-    {
-        write_page(i, i * 100 + 2);
-    }
-
-    printf(1, "\nReading: %d\n", read_page(0));
-    printf(1, "Reading: %d\n", read_page(1));
-    printf(1, "Reading: %d\n", read_page(3));
-    printf(1, "Reading: %d\n", read_page(2));
-    printf(1, "Reading: %d\n", read_page(4));
-    printf(1, "Reading: %d\n", read_page(5));
-
-    write_page(4, 400);
-    write_page(5, 500);
-    write_page(6, 10000);
-
-    for (int i = 0; i <= 6; i++)
-    {
-        int val = read_page(i);
-        printf(1, "Read VPN %d -> Value: %d\n", i, val);
-    }
-
-
-    for (int i = 0; i < 4; i++)
-    {
-        write_page(i, i * 100 + 3);
-    }
-    printf(1,"FINISH\n\n");
     exit();
 }
