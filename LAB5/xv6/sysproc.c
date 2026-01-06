@@ -164,16 +164,16 @@ int get_victim_index()
 void write_back_victim(int idx)
 {
   struct PageEntry *vic = &page_table.pages[idx];
-  struct proc *p = myproc();
+  // struct proc *p = myproc();
 
-  if (vic->valid && vic->paddr != 0)
-  {
-    pte_t *pte = walkpgdir(p->pgdir, (void *)(vic->vpn * PGSIZE), 0);
-    if (pte && (*pte & PTE_P))
-    {
-      memmove(P2V(PTE_ADDR(*pte)), vic->paddr, PGSIZE);
-    }
-  }
+  // if (vic->valid && vic->paddr != 0)
+  // {
+  //   pte_t *pte = walkpgdir(p->pgdir, (void *)(vic->vpn * PGSIZE), 0);
+  //   if (pte && (*pte & PTE_P))
+  //   {
+  //     memmove(P2V(PTE_ADDR(*pte)), vic->paddr, PGSIZE);
+  //   }
+  // }
   vic->valid = 0;
 }
 
@@ -200,17 +200,17 @@ int find_free_frame()
 
 void load_page_into_frame(int idx, int vpn, int pid, char *phys_addr)
 {
-  struct proc *p = myproc();
-  pte_t *pte = walkpgdir(p->pgdir, (void *)(vpn * PGSIZE), 0);
+  // struct proc *p = myproc();
+  // pte_t *pte = walkpgdir(p->pgdir, (void *)(vpn * PGSIZE), 0);
 
-  if (pte && (*pte & PTE_P))
-  {
-    memmove(phys_addr, P2V(PTE_ADDR(*pte)), PGSIZE);
-  }
-  else
-  {
-    memset(phys_addr, 0, PGSIZE);
-  }
+  // if (pte && (*pte & PTE_P))
+  // {
+  //   memmove(phys_addr, P2V(PTE_ADDR(*pte)), PGSIZE);
+  // }
+  // else
+  // {
+  //   memset(phys_addr, 0, PGSIZE);
+  // }
 
   page_table.pages[idx].vpn = vpn;
   page_table.pages[idx].pid = pid;
