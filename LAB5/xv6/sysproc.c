@@ -10,8 +10,15 @@
 
 #define MAX_PAGES 4
 
-int algo_type = 1;
+int algo_type = 0;
 int global_page_time = 0;
+static int clock_hand = 0;
+
+extern struct 
+{
+  struct spinlock lock;
+  struct proc proc[NPROC];
+} ptable;
 
 struct PageEntry
 {
@@ -112,75 +119,123 @@ int sys_uptime(void)
   return xticks;
 }
 
-//////////////////Rashid
+////////////////// Rashid & Sharifi
 
 extern pte_t *walkpgdir(pde_t *pgdir, const void *va, int alloc);
+
+struct proc* find_proc_by_pid(int pid)
+{
+  struct proc *p;
+
+  acquire(&ptable.lock);
+  for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+    if(p->pid == pid && p->state != UNUSED){
+      release(&ptable.lock);
+      return p;
+    }
+  }
+  release(&ptable.lock);
+  return 0;
+}
 
 int get_victim_index()
 {
   int victim = 0;
-  if (algo_type == 0)
+
+  if (algo_type == 0) // FIFO
   {
     int min_time = 0x7FFFFFFF;
     for (int i = 0; i < MAX_PAGES; i++)
     {
-      if (page_table.pages[i].creation_time < min_time)
+      if (page_table.pages[i].valid &&
+          page_table.pages[i].creation_time < min_time)
       {
         min_time = page_table.pages[i].creation_time;
         victim = i;
-        // cprintf("%d",i);
       }
     }
   }
-  else if (algo_type == 1)
+  else if (algo_type == 1) // LRU
   {
     int min_access = 0x7FFFFFFF;
     for (int i = 0; i < MAX_PAGES; i++)
     {
-      if (page_table.pages[i].last_access < min_access)
+      if (page_table.pages[i].valid &&
+          page_table.pages[i].last_access < min_access)
       {
         min_access = page_table.pages[i].last_access;
         victim = i;
       }
     }
   }
-  else if (algo_type == 2)
+  else if (algo_type == 2) // LFU
   {
     int min_count = 0x7FFFFFFF;
     for (int i = 0; i < MAX_PAGES; i++)
     {
-      // cprintf("%d", page_table.pages[i].access_count);
-      if (page_table.pages[i].access_count < min_count)
+      if (page_table.pages[i].valid &&
+          page_table.pages[i].access_count < min_count)
       {
         min_count = page_table.pages[i].access_count;
         victim = i;
-        
       }
     }
   }
-  cprintf("%d",victim);
+  else if (algo_type == 3) // Second-Chance
+  {
+    int visited_frame = 0;
+    while (visited_frame < 2 * MAX_PAGES)
+    {
+      int i = clock_hand;
+      clock_hand = (clock_hand + 1) % MAX_PAGES;
+      visited_frame++;
+
+      if (!page_table.pages[i].valid)
+        continue;
+
+      if (page_table.pages[i].reference_bit == 0)
+      {
+        victim = i;
+        break;
+      }
+
+      page_table.pages[i].reference_bit = 0;
+    }
+  }
+
+  cprintf("[EVICT] idx=%d pid=%d vpn=%d\n", victim, page_table.pages[victim].pid, page_table.pages[victim].vpn);
+
   return victim;
 }
+
 void write_back_victim(int idx)
 {
   struct PageEntry *vic = &page_table.pages[idx];
-  // struct proc *p = myproc();
 
-  // if (vic->valid && vic->paddr != 0)
-  // {
-  //   pte_t *pte = walkpgdir(p->pgdir, (void *)(vic->vpn * PGSIZE), 0);
-  //   if (pte && (*pte & PTE_P))
-  //   {
-  //     memmove(P2V(PTE_ADDR(*pte)), vic->paddr, PGSIZE);
-  //   }
-  // }
+  if (!vic->valid || vic->paddr == 0)
+    return;
+
+  struct proc *p = find_proc_by_pid(vic->pid);
+  if (p == 0 || p->pgdir == 0) {
+    vic->valid = 0;
+    return;
+  }
+
+  uint virtual_address = (uint)vic->vpn * PGSIZE;
+  pte_t *pte = walkpgdir(p->pgdir, (void*)virtual_address, 0);
+  if (pte && (*pte & PTE_P)) {
+    memmove(P2V(PTE_ADDR(*pte)), vic->paddr, PGSIZE);
+  }
+
   vic->valid = 0;
 }
 
 int find_page_entry(int vpn, int pid)
 {
   for (int i = 0; i < MAX_PAGES; i++)
-    if (page_table.pages[i].valid && page_table.pages[i].vpn == vpn && page_table.pages[i].pid == pid)
+    if (page_table.pages[i].valid &&
+        page_table.pages[i].vpn == vpn &&
+        page_table.pages[i].pid == pid)
     {
       return i;
     }
@@ -200,17 +255,20 @@ int find_free_frame()
 
 void load_page_into_frame(int idx, int vpn, int pid, char *phys_addr)
 {
-  // struct proc *p = myproc();
-  // pte_t *pte = walkpgdir(p->pgdir, (void *)(vpn * PGSIZE), 0);
+  struct proc *p = find_proc_by_pid(pid);
 
-  // if (pte && (*pte & PTE_P))
-  // {
-  //   memmove(phys_addr, P2V(PTE_ADDR(*pte)), PGSIZE);
-  // }
-  // else
-  // {
-  //   memset(phys_addr, 0, PGSIZE);
-  // }
+  if (p && p->pgdir) {
+    uint va = (uint)vpn * PGSIZE;
+    pte_t *pte = walkpgdir(p->pgdir, (void*)va, 0);
+
+    if (pte && (*pte & PTE_P)) {
+      memmove(phys_addr, P2V(PTE_ADDR(*pte)), PGSIZE);
+    } else {
+      memset(phys_addr, 0, PGSIZE);
+    }
+  } else {
+    memset(phys_addr, 0, PGSIZE);
+  }
 
   page_table.pages[idx].vpn = vpn;
   page_table.pages[idx].pid = pid;
@@ -254,8 +312,6 @@ int sys_write_page(void)
   int offset = va % PGSIZE;
   int pid = myproc()->pid;
 
-  // cprintf("\nvpn %d",vpn);
-
   acquire(&page_table.lock);
 
   int idx = find_page_entry(vpn, pid);
@@ -290,6 +346,7 @@ int sys_write_page(void)
   release(&page_table.lock);
   return 0;
 }
+
 int sys_read_page(void)
 {
   int va;
@@ -309,8 +366,6 @@ int sys_read_page(void)
 
   int idx = find_page_entry(vpn, pid);
 
-  // cprintf("\n%d\n", idx);
-
   if (idx != -1)
   {
     page_table.hit_count++;
@@ -321,20 +376,21 @@ int sys_read_page(void)
   {
     page_table.miss_count++;
 
-    // // int target = get_target_frame();
-    // // if (page_table.pages[target].valid)
-    // // {
-    // //   write_back_victim(target);
-    // // }
+    int target = get_target_frame();
 
-    // // if (page_table.pages[target].paddr == 0)
-    // // {
-    // //   page_table.pages[target].paddr = kalloc();
-    // // }
+    if (page_table.pages[target].valid)
+    {
+      write_back_victim(target);
+    }
 
-    // load_page_into_frame(target, vpn, pid, page_table.pages[target].paddr);
+    if (page_table.pages[target].paddr == 0)
+    {
+      page_table.pages[target].paddr = kalloc();
+    }
 
-    // // data = *(int *)(page_table.pages[target].paddr + offset);
+    load_page_into_frame(target, vpn, pid, page_table.pages[target].paddr);
+
+    data = *(int *)(page_table.pages[target].paddr + offset);
   }
 
   release(&page_table.lock);
